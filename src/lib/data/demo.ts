@@ -22,7 +22,7 @@ const NACHNAMEN = ["Müller", "Schmidt", "Schneider", "Fischer", "Weber", "Meyer
 const VERLUSTGRUENDE = ["Preis", "Kein Bedarf", "Zeitpunkt", "Konkurrenz", "Nicht erreichbar", "Entscheider fehlt"];
 
 const iso = (d: Date) => d.toISOString();
-const day = (d: Date) => d.toISOString().slice(0, 10);
+const day = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; // lokales Datum
 const addMin = (d: Date, m: number) => new Date(d.getTime() + m * 60000);
 
 export function demoDataset(now = new Date()): Dataset {
@@ -158,13 +158,13 @@ export function demoDataset(now = new Date()): Dataset {
       createdAt: iso(egOk), stageSince: iso(egOk), userId: c.id, hatNaechsteAufgabe: r() < 0.85,
     };
     opps.push(opp);
-    if (r() > 0.55 * quali) { if (egOk < addMin(now, -60 * 24 * 10) && r() < 0.7) verliere(opp, egOk); return; }
+    if (r() > 0.55 * quali) { if (egOk < addMin(now, -60 * 24 * 10)) verliere(opp, addMin(egOk, 60 * 24 * 7)); return; }
     const bgStart = inArbeitszeit(addMin(egOk, 60 * (24 + r() * 24 * 6)));
     const bgOutcome = bgStart > now ? null : r() < 0.8 ? "stattgefunden" : "no_show";
     meetings.push({ id: `mtg_${meetings.length}`, leadId: lead.id, typ: "beratung", bookedAt: iso(egOk), startsAt: iso(bgStart), outcome: bgOutcome as Meeting["outcome"], userId: c.id });
     setStage(opp, "closing_terminiert", egOk);
     opp.closeDate = iso(bgStart);
-    if (bgOutcome !== "stattgefunden") return;
+    if (bgOutcome !== "stattgefunden") { if (bgStart < addMin(now, -60 * 24 * 14)) verliere(opp, addMin(bgStart, 60 * 24 * 7)); return; }
     const paket = lead.kundentyp === "B2B" ? (r() < 0.6 ? "Team" : r() < 0.7 ? "Einzelplatz" : "Inhouse") : "Einzelplatz";
     const liste = { Einzelplatz: 3000, Team: 9000, Inhouse: 18000 }[paket]!;
     opp.paket = paket; opp.listenpreis = liste;
@@ -288,7 +288,7 @@ export function demoDataset(now = new Date()): Dataset {
       ...DEFAULT_SETTINGS,
       monatsziel: { [monat]: 120000, [vormonat]: 110000 },
       repZiele: {
-        u_setter1: { termine: 40, anwahlen: 900 }, u_setter2: { termine: 40, anwahlen: 900 },
+        u_setter1: { termine: 120, anwahlen: 1400 }, u_setter2: { termine: 110, anwahlen: 1400 },
         u_closer1: { abschluesse: 9, umsatz: 64000 }, u_closer2: { abschluesse: 8, umsatz: 56000 },
       },
     },

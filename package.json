@@ -6,7 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "close:setup": "tsx scripts/close-setup.ts",
+    "close:webhook": "tsx scripts/close-webhook.ts",
+    "admin:anlegen": "tsx scripts/admin-anlegen.ts",
+    "sync": "tsx --conditions=react-server scripts/sync.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -28,6 +33,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
     "tailwindcss": "4.3.3",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }

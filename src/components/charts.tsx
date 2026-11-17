@@ -49,8 +49,8 @@ export function KombiChart({ daten, x, reihen, format = "zahl", hoehe = 240 }: {
           <Tooltip content={<TipBox format={format} />} cursor={{ fill: "var(--surface-2)" }} />
           {reihen.length > 1 && <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, color: "var(--ink-2)" }} />}
           {reihen.map((r, i) => r.typ === "line"
-            ? <Line key={r.key} dataKey={r.key} name={r.name} stroke={r.farbe ?? SERIEN[i]} strokeWidth={2} dot={false} strokeDasharray={r.gestrichelt ? "5 4" : undefined} activeDot={{ r: 4 }} />
-            : <Bar key={r.key} dataKey={r.key} name={r.name} fill={r.farbe ?? SERIEN[i]} radius={[4, 4, 0, 0]} maxBarSize={28} />)}
+            ? <Line isAnimationActive={false} key={r.key} dataKey={r.key} name={r.name} stroke={r.farbe ?? SERIEN[i]} strokeWidth={2} dot={false} strokeDasharray={r.gestrichelt ? "5 4" : undefined} activeDot={{ r: 4 }} />
+            : <Bar isAnimationActive={false} key={r.key} dataKey={r.key} name={r.name} fill={r.farbe ?? SERIEN[i]} radius={[4, 4, 0, 0]} maxBarSize={28} />)}
         </ComposedChart>
       </ResponsiveContainer>
     </div>
@@ -67,7 +67,7 @@ export function LinienChart({ daten, x, reihen, format = "zahl", hoehe = 220 }: 
           <YAxis {...achsenProps} axisLine={false} width={56} tickFormatter={achse(format)} />
           <Tooltip content={<TipBox format={format} />} />
           {reihen.length > 1 && <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12 }} />}
-          {reihen.map((r, i) => <Line key={r.key} dataKey={r.key} name={r.name} stroke={r.farbe ?? SERIEN[i]} strokeWidth={2} dot={false} strokeDasharray={r.gestrichelt ? "5 4" : undefined} connectNulls activeDot={{ r: 4 }} />)}
+          {reihen.map((r, i) => <Line isAnimationActive={false} key={r.key} dataKey={r.key} name={r.name} stroke={r.farbe ?? SERIEN[i]} strokeWidth={2} dot={false} strokeDasharray={r.gestrichelt ? "5 4" : undefined} connectNulls activeDot={{ r: 4 }} />)}
         </LineChart>
       </ResponsiveContainer>
     </div>
@@ -84,7 +84,7 @@ export function BalkenH({ daten, format = "zahl", farbe = "var(--s1)", hoehe }: 
           <XAxis type="number" hide />
           <YAxis type="category" dataKey="name" {...achsenProps} axisLine={false} width={130} />
           <Tooltip content={<TipBox format={{ wert: format }} />} cursor={{ fill: "var(--surface-2)" }} />
-          <Bar dataKey="wert" name="Wert" radius={[0, 4, 4, 0]} maxBarSize={20} label={{ position: "right", fill: "var(--ink-2)", fontSize: 11, formatter: (v: unknown) => fmt(Number(v), format) }}>
+          <Bar isAnimationActive={false} dataKey="wert" name="Wert" radius={[0, 4, 4, 0]} maxBarSize={20} label={{ position: "right", fill: "var(--ink-2)", fontSize: 11, formatter: (v: unknown) => fmt(Number(v), format) }}>
             {daten.map((d, i) => <Cell key={i} fill={d.hervor ? "var(--s2)" : farbe} />)}
           </Bar>
         </BarChart>
@@ -103,7 +103,7 @@ export function BalkenV({ daten, x, reihen, format = "zahl", hoehe = 220, gestap
           <YAxis {...achsenProps} axisLine={false} width={56} tickFormatter={achse(format)} />
           <Tooltip content={<TipBox format={format} />} cursor={{ fill: "var(--surface-2)" }} />
           {reihen.length > 1 && <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12 }} />}
-          {reihen.map((r, i) => <Bar key={r.key} dataKey={r.key} name={r.name} stackId={gestapelt ? "a" : undefined} fill={r.farbe ?? SERIEN[i]} radius={gestapelt ? 0 : [4, 4, 0, 0]} maxBarSize={32} stroke={gestapelt ? "var(--surface)" : undefined} strokeWidth={gestapelt ? 2 : 0} />)}
+          {reihen.map((r, i) => <Bar isAnimationActive={false} key={r.key} dataKey={r.key} name={r.name} stackId={gestapelt ? "a" : undefined} fill={r.farbe ?? SERIEN[i]} radius={gestapelt ? 0 : [4, 4, 0, 0]} maxBarSize={32} stroke={gestapelt ? "var(--surface)" : undefined} strokeWidth={gestapelt ? 2 : 0} />)}
         </BarChart>
       </ResponsiveContainer>
     </div>
