@@ -131,7 +131,7 @@ export function QuotenListe({ quoten }: { quoten: { label: string; wert: number 
 /** Kleine Kennzahl-Zelle für dichte Raster (Marketing-/Sales-Blöcke). */
 export function MiniKpi({ label, wert, sub, a, href }: { label: string; wert: string; sub?: ReactNode; a?: Ampel; href?: string }) {
   const inhalt = (
-    <div className={cx("h-full rounded-2xl bg-surface-2 p-4 transition", href && "hover:bg-brand-100")}>
+    <div className={cx("h-full rounded-[20px] border border-[var(--glass-border)] bg-surface-2 p-4 shadow-[inset_0_1px_0_var(--glass-edge)] transition", href && "hover:-translate-y-0.5 hover:bg-accent-soft")}>
       <div className="text-[13px] leading-snug text-ink-2">{label}</div>
       <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
         <span className={cx("text-[24px] font-semibold leading-none tracking-tight tabular", a === "grau" && "text-muted")}>{wert}</span>

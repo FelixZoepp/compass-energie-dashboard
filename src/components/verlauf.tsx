@@ -16,9 +16,9 @@ export function Verlauf({ daten, metriken }: { daten: Record<Granularitaet, Verl
   const gewaehlt = aktiv != null ? reihe[aktiv] : null;
   return (
     <div>
-      <div className="mb-3 inline-flex rounded-full border border-line p-1">
+      <div className="mb-3 inline-flex rounded-full border border-[var(--glass-border)] bg-surface-2 p-1">
         {(["tage", "wochen", "monate"] as const).map((x) => (
-          <button key={x} type="button" onClick={() => { setG(x); setAktiv(null); }} className={`rounded-full px-4 py-1.5 text-[14px] ${g === x ? "bg-brand-700 text-white" : "text-ink"}`}>
+          <button key={x} type="button" onClick={() => { setG(x); setAktiv(null); }} className={`rounded-full px-4 py-1.5 text-[14px] ${g === x ? "liquid-pill-aktiv" : "text-ink"}`}>
             {x === "tage" ? "Tage" : x === "wochen" ? "Wochen" : "Monate"}
           </button>
         ))}

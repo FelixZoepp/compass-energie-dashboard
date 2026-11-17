@@ -4,10 +4,10 @@
    Ampelfarben nur für Bewertungen. Hell + Dunkel (OS oder Umschalter). */
 :root {
   color-scheme: light;
-  --page: #e9ece8;
-  --panel: #f4f6f3;
+  --page: #e8ede8;
+  --panel: rgba(255, 255, 255, 0.28);
   --surface: #ffffff;
-  --surface-2: #f1f4f0;
+  --surface-2: rgba(17, 26, 21, 0.045);
   --ink: #111a15;
   --ink-2: #57625b;
   --muted: #8b958e;
@@ -32,28 +32,45 @@
   --grey-soft: #eceeeb;
   --shadow: 0 1px 2px rgba(17, 26, 21, 0.04), 0 8px 24px rgba(17, 26, 21, 0.04);
   --shadow-brand: 0 14px 30px rgba(26, 68, 52, 0.28);
+  --mesh-1: rgba(122, 190, 150, 0.55);
+  --mesh-2: rgba(170, 214, 222, 0.55);
+  --mesh-3: rgba(232, 222, 196, 0.6);
+  --glass-bg: rgba(255, 255, 255, 0.58);
+  --glass-strong: rgba(255, 255, 255, 0.78);
+  --glass-border: rgba(255, 255, 255, 0.75);
+  --glass-edge: rgba(255, 255, 255, 0.95);
+  --glass-sheen: rgba(255, 255, 255, 0.55);
+  --glass-shadow: 0 1px 1px rgba(17, 26, 21, 0.04), 0 10px 30px rgba(31, 77, 58, 0.10), 0 2px 6px rgba(17, 26, 21, 0.04);
 }
 @media (prefers-color-scheme: dark) {
   :root:where(:not([data-theme="light"])) {
     color-scheme: dark;
-    --page: #070a08; --panel: #0d1210; --surface: #141a17; --surface-2: #1b231f;
+    --page: #070a08; --panel: rgba(255, 255, 255, 0.03); --surface: #141a17; --surface-2: rgba(255, 255, 255, 0.05);
     --ink: #eef2ef; --ink-2: #b4beb7; --muted: #7f8a83; --grid: #232c27; --axis: #34403a; --border: rgba(255, 255, 255, 0.08);
     --brand-800: #0f2a20; --brand-700: #153527; --brand-600: #1e4a37; --brand-500: #2f7a55; --brand-400: #46a273; --brand-300: #6fbf93; --brand-100: #16261e;
     --accent: #46a273; --accent-soft: #16261e;
     --s1: #1fa463; --s2: #3987e5; --s3: #d95926; --s4: #9085e9; --s5: #c98500; --s6: #d55181; --s7: #7f8a83; --s8: #4a554e;
     --good: #2fb468; --good-ink: #4fd18a; --good-soft: #10261a; --warn-ink: #fab219; --warn-soft: #2b2310; --bad: #e05a4a; --bad-ink: #f28576; --bad-soft: #2e1714; --grey-soft: #222a26;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.3); --shadow-brand: 0 14px 30px rgba(0, 0, 0, 0.4);
+    --mesh-1: rgba(38, 110, 74, 0.45); --mesh-2: rgba(30, 80, 96, 0.40); --mesh-3: rgba(70, 60, 30, 0.35);
+    --glass-bg: rgba(28, 36, 32, 0.55); --glass-strong: rgba(28, 36, 32, 0.82); --glass-border: rgba(255, 255, 255, 0.10);
+    --glass-edge: rgba(255, 255, 255, 0.16); --glass-sheen: rgba(255, 255, 255, 0.06);
+    --glass-shadow: 0 1px 1px rgba(0,0,0,0.3), 0 12px 32px rgba(0,0,0,0.35);
   }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --page: #070a08; --panel: #0d1210; --surface: #141a17; --surface-2: #1b231f;
+  --page: #070a08; --panel: rgba(255, 255, 255, 0.03); --surface: #141a17; --surface-2: rgba(255, 255, 255, 0.05);
   --ink: #eef2ef; --ink-2: #b4beb7; --muted: #7f8a83; --grid: #232c27; --axis: #34403a; --border: rgba(255, 255, 255, 0.08);
   --brand-800: #0f2a20; --brand-700: #153527; --brand-600: #1e4a37; --brand-500: #2f7a55; --brand-400: #46a273; --brand-300: #6fbf93; --brand-100: #16261e;
   --accent: #46a273; --accent-soft: #16261e;
   --s1: #1fa463; --s2: #3987e5; --s3: #d95926; --s4: #9085e9; --s5: #c98500; --s6: #d55181; --s7: #7f8a83; --s8: #4a554e;
   --good: #2fb468; --good-ink: #4fd18a; --good-soft: #10261a; --warn-ink: #fab219; --warn-soft: #2b2310; --bad: #e05a4a; --bad-ink: #f28576; --bad-soft: #2e1714; --grey-soft: #222a26;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.3); --shadow-brand: 0 14px 30px rgba(0, 0, 0, 0.4);
+  --mesh-1: rgba(38, 110, 74, 0.45); --mesh-2: rgba(30, 80, 96, 0.40); --mesh-3: rgba(70, 60, 30, 0.35);
+  --glass-bg: rgba(28, 36, 32, 0.55); --glass-strong: rgba(28, 36, 32, 0.82); --glass-border: rgba(255, 255, 255, 0.10);
+  --glass-edge: rgba(255, 255, 255, 0.16); --glass-sheen: rgba(255, 255, 255, 0.06);
+  --glass-shadow: 0 1px 1px rgba(0,0,0,0.3), 0 12px 32px rgba(0,0,0,0.35);
 }
 
 @theme inline {
@@ -88,17 +105,65 @@
   --font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
-html, body { background: var(--page); color: var(--ink); }
-body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; font-feature-settings: "cv11", "ss01"; }
-.tabular { font-variant-numeric: tabular-nums; }
-.card { background: var(--surface); border: 1px solid var(--border); border-radius: 26px; box-shadow: var(--shadow); }
-.card-brand {
-  background: radial-gradient(120% 140% at 100% 0%, var(--brand-500) 0%, var(--brand-700) 55%, var(--brand-800) 100%);
-  color: var(--on-brand); border-radius: 26px; box-shadow: var(--shadow-brand); border: 0;
+html, body { color: var(--ink); }
+html { background: var(--page); }
+body {
+  font-family: var(--font-sans); -webkit-font-smoothing: antialiased; font-feature-settings: "cv11", "ss01";
+  /* Liquid-Glass-Hintergrund: weiche Farbfelder, auf denen das Glas „liegt“ */
+  background:
+    radial-gradient(60vw 50vh at 8% 0%, var(--mesh-1), transparent 70%),
+    radial-gradient(50vw 45vh at 100% 10%, var(--mesh-2), transparent 70%),
+    radial-gradient(70vw 60vh at 60% 100%, var(--mesh-3), transparent 70%),
+    var(--page);
+  background-attachment: fixed;
+  min-height: 100vh;
 }
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* ---- Liquid Glass ---------------------------------------------------- */
+.glass, .card {
+  position: relative; isolation: isolate;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+.card { border-radius: 28px; }
+/* Lichtkante oben + weicher Glanz */
+.glass::before, .card::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(180deg, var(--glass-sheen) 0%, transparent 38%);
+  box-shadow: inset 0 1px 0 var(--glass-edge), inset 0 -1px 0 rgba(255,255,255,0.04);
+}
+.glass-strong { background: var(--glass-strong); }
+
+.card-brand {
+  position: relative; isolation: isolate; overflow: hidden; color: var(--on-brand); border-radius: 28px; border: 1px solid rgba(255,255,255,0.14);
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgba(140, 220, 175, 0.35) 0%, transparent 55%),
+    linear-gradient(160deg, var(--brand-500) 0%, var(--brand-700) 55%, var(--brand-800) 100%);
+  box-shadow: var(--shadow-brand), inset 0 1px 0 rgba(255,255,255,0.28), inset 0 -20px 40px rgba(0,0,0,0.12);
+}
+.card-brand::after {
+  content: ""; position: absolute; z-index: -1; width: 220px; height: 220px; right: -70px; top: -90px; border-radius: 999px; pointer-events: none;
+  background: radial-gradient(circle, rgba(255,255,255,0.22), transparent 65%);
+}
+
+/* Glas-Knöpfe und Pillen */
+.liquid-btn {
+  background: linear-gradient(180deg, rgba(255,255,255,0.35), rgba(255,255,255,0.08)), var(--brand-600);
+  color: #fff; box-shadow: 0 6px 16px rgba(26, 68, 52, 0.30), inset 0 1px 0 rgba(255,255,255,0.45);
+}
+.liquid-pill-aktiv {
+  background: linear-gradient(180deg, rgba(255,255,255,0.28), rgba(255,255,255,0) 60%), var(--brand-700);
+  color: #fff; box-shadow: 0 4px 12px rgba(26, 68, 52, 0.30), inset 0 1px 0 rgba(255,255,255,0.35);
+}
+
 .scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .recharts-cartesian-grid line { stroke: var(--grid); }
 .recharts-text { fill: var(--muted); font-size: 11px; }
 .recharts-tooltip-cursor { fill: var(--surface-2); }
 .schraffur { background-image: repeating-linear-gradient(135deg, var(--axis) 0 2px, transparent 2px 6px); }
-@media print { .no-print { display: none !important; } }
+@media (prefers-reduced-transparency: reduce) { .glass, .card { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; } }
+@media print { .no-print { display: none !important; } .card { background: #fff; backdrop-filter: none; box-shadow: none; } }

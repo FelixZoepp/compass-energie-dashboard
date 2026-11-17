@@ -50,7 +50,7 @@ function useAktualisieren() {
 
 function NavLink({ href, label, Icon, aktiv, qs }: { href: string; label: string; Icon: typeof LayoutGrid; aktiv: boolean; qs: string }) {
   return (
-    <Link href={href + qs} className={`relative flex items-center gap-3 rounded-2xl px-3 py-[7px] text-[14.5px] transition ${aktiv ? "font-semibold text-ink" : "text-ink-2 hover:bg-surface-2 hover:text-ink"}`}>
+    <Link href={href + qs} className={`relative flex items-center gap-3 rounded-2xl px-3 py-[7px] text-[14.5px] transition ${aktiv ? "bg-[var(--glass-strong)] font-semibold text-ink shadow-[inset_0_1px_0_var(--glass-edge),0_2px_8px_rgba(17,26,21,0.06)]" : "text-ink-2 hover:bg-surface-2 hover:text-ink"}`}>
       {aktiv && <span className="absolute -left-5 top-1/2 h-8 w-1 -translate-y-1/2 rounded-r-full bg-brand-600" aria-hidden />}
       <Icon className={`h-[18px] w-[18px] ${aktiv ? "text-brand-600" : ""}`} /> {label}
     </Link>
@@ -63,9 +63,9 @@ export function Sidebar({ erlaubt, demo, quellenText, standZeit }: { erlaubt: st
   const { laedt, los } = useAktualisieren();
   const ist = (h: string) => (h === "/" ? pfad === "/" : pfad.startsWith(h));
   return (
-    <aside className="no-print sticky top-4 m-4 mr-0 hidden h-[calc(100vh-2rem)] w-[260px] shrink-0 flex-col rounded-[28px] bg-surface p-5 shadow-[var(--shadow)] lg:flex">
+    <aside className="glass no-print sticky top-4 m-4 mr-0 hidden h-[calc(100vh-2rem)] w-[260px] shrink-0 flex-col rounded-[30px] p-5 lg:flex">
       <Link href={"/" + qs} className="mb-5 flex items-center gap-3 px-1">
-        <span className="grid h-11 w-11 place-items-center rounded-2xl bg-brand-600 text-white shadow-[var(--shadow-brand)]"><ShieldCheck className="h-5 w-5" /></span>
+        <span className="liquid-btn grid h-11 w-11 place-items-center rounded-2xl"><ShieldCheck className="h-5 w-5" /></span>
         <span className="leading-tight"><span className="block text-[17px] font-semibold">Compass Energie</span><span className="block text-[13px] text-muted">CEO-Cockpit</span></span>
       </Link>
       <nav className="flex min-h-0 flex-1 flex-col overflow-y-auto pl-2">
@@ -85,7 +85,7 @@ export function Sidebar({ erlaubt, demo, quellenText, standZeit }: { erlaubt: st
         <span className="grid h-9 w-9 place-items-center rounded-full bg-white/15"><span className={`h-2.5 w-2.5 rounded-full ${demo ? "bg-[var(--warn)]" : "bg-white"}`} /></span>
         <div className="mt-2 text-[16px] font-semibold">{demo ? "Demo-Daten" : "Live-Daten"}</div>
         <div className="mt-0.5 text-[13px] leading-snug text-white/75">{quellenText} · Stand {standZeit}</div>
-        <button type="button" onClick={los} className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-brand-400/90 py-2 text-[15px] font-semibold text-white hover:bg-brand-400">
+        <button type="button" onClick={los} className="mt-3 flex w-full items-center justify-center gap-2 rounded-full border border-white/25 bg-white/15 py-2 backdrop-blur hover:bg-white/25 text-[15px] font-semibold text-white hover:bg-brand-400">
           <RefreshCw className={`h-4 w-4 ${laedt ? "animate-spin" : ""}`} /> Aktualisieren
         </button>
       </div>
@@ -100,14 +100,14 @@ export function Kopfleiste({ standText, name, stufe, initialen, erlaubt, demo }:
   const ist = (h: string) => (h === "/" ? pfad === "/" : pfad.startsWith(h));
   return (
     <>
-      <header className="no-print mb-4 flex items-center justify-between gap-3 rounded-[28px] bg-surface px-5 py-3 shadow-[var(--shadow)] sm:px-6">
+      <header className="glass no-print mb-4 flex items-center justify-between gap-3 rounded-[30px] px-5 py-3 sm:px-6">
         <span className="min-w-0 truncate text-[15px] text-ink-2">{standText}</span>
         <div className="flex items-center gap-2">
-          <button type="button" onClick={los} aria-label="Aktualisieren" className="grid h-11 w-11 place-items-center rounded-full bg-surface-2 text-ink hover:bg-brand-100">
+          <button type="button" onClick={los} aria-label="Aktualisieren" className="grid h-11 w-11 place-items-center rounded-full border border-[var(--glass-border)] bg-[var(--glass-strong)] text-ink shadow-[inset_0_1px_0_var(--glass-edge)] hover:scale-105 transition">
             <RefreshCw className={`h-4 w-4 ${laedt ? "animate-spin" : ""}`} />
           </button>
-          <div className="flex items-center gap-3 rounded-full bg-surface-2 py-1.5 pl-1.5 pr-4">
-            <span className="grid h-9 w-9 place-items-center rounded-full bg-brand-700 text-[13px] font-semibold text-white">{initialen}</span>
+          <div className="flex items-center gap-3 rounded-full border border-[var(--glass-border)] bg-[var(--glass-strong)] py-1.5 pl-1.5 pr-4 shadow-[inset_0_1px_0_var(--glass-edge)]">
+            <span className="liquid-btn grid h-9 w-9 place-items-center rounded-full text-[13px] font-semibold">{initialen}</span>
             <span className="hidden leading-tight sm:block"><span className="block text-[14px] font-semibold">{name}</span><span className="block text-[12px] text-muted">{stufe}</span></span>
           </div>
         </div>
@@ -115,9 +115,9 @@ export function Kopfleiste({ standText, name, stufe, initialen, erlaubt, demo }:
       {/* Mobile Navigation */}
       <nav className="no-print scroll-x -mx-1 mb-4 flex gap-2 px-1 lg:hidden">
         {[...MENUE, ...ALLGEMEIN].filter((i) => erlaubt.includes(i.href)).map((i) => (
-          <Link key={i.href} href={i.href + qs} className={`whitespace-nowrap rounded-full px-4 py-2 text-[14px] ${ist(i.href) ? "bg-brand-700 text-white" : "bg-surface text-ink-2 shadow-[var(--shadow)]"}`}>{i.label}</Link>
+          <Link key={i.href} href={i.href + qs} className={`whitespace-nowrap rounded-full px-4 py-2 text-[14px] ${ist(i.href) ? "liquid-pill-aktiv" : "glass text-ink-2"}`}>{i.label}</Link>
         ))}
-        {!demo && <form action="/auth/logout" method="post"><button className="whitespace-nowrap rounded-full bg-surface px-4 py-2 text-[14px] text-ink-2">Abmelden</button></form>}
+        {!demo && <form action="/auth/logout" method="post"><button className="glass whitespace-nowrap rounded-full px-4 py-2 text-[14px] text-ink-2">Abmelden</button></form>}
       </nav>
     </>
   );

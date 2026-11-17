@@ -37,7 +37,7 @@ export default async function DashLayout({ children }: { children: React.ReactNo
           </Suspense>
           {ds.syncFehler && <div className="mb-4 rounded-2xl bg-bad px-5 py-3 text-sm font-medium text-white">Sync-Fehler: {ds.syncFehler}</div>}
           {veraltet && <div className="mb-4 rounded-2xl bg-bad-soft px-5 py-3 text-sm text-bad-ink">Letzter erfolgreicher Sync ist über 3 Stunden her.</div>}
-          <main className="min-h-[calc(100vh-8rem)] rounded-[32px] bg-panel px-4 py-6 sm:px-8 sm:py-9">{children}</main>
+          <main className="min-h-[calc(100vh-8rem)] rounded-[34px] border border-[var(--glass-border)] bg-panel px-4 py-6 shadow-[inset_0_1px_0_var(--glass-edge)] sm:px-8 sm:py-9">{children}</main>
         </div>
       </div>
     </DatenProvider>

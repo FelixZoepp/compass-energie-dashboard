@@ -48,7 +48,7 @@ export function SeitenKopf({ titel, klartext, children, ohneZeitraum }: { titel:
 export function PfeilKnopf({ href, hell }: { href: string; hell?: boolean }) {
   return (
     <Link href={href} aria-label="Details" className={cx("grid h-10 w-10 shrink-0 place-items-center rounded-full border transition",
-      hell ? "border-transparent bg-white text-brand-700 hover:scale-105" : "border-line text-ink hover:border-accent hover:text-accent")}>
+      hell ? "border-white/40 bg-white/90 text-brand-700 shadow-[inset_0_1px_0_#fff] hover:scale-105" : "border-[var(--glass-border)] bg-[var(--glass-strong)] text-ink shadow-[inset_0_1px_0_var(--glass-edge),0_2px_6px_rgba(17,26,21,0.06)] hover:scale-105 hover:text-accent")}>
       <ArrowUpRight className="h-4 w-4" />
     </Link>
   );

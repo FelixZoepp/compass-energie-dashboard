@@ -111,14 +111,14 @@ export default async function Cockpit({ searchParams }: { searchParams: SP }) {
             </div>
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
               {bestes && (
-                <div className="rounded-2xl border border-line p-4">
+                <div className="rounded-[20px] border border-[var(--glass-border)] bg-surface-2 p-4 shadow-[inset_0_1px_0_var(--glass-edge)]">
                   <div className="text-[12px] font-semibold uppercase tracking-wider text-good-ink">Bestes Creative</div>
                   <div className="mt-1 font-medium">{bestes.name}</div>
                   <div className="mt-1 text-[13px] text-ink-2">{fw("kostenShow", bestes.kostenShow)} pro Show · {bestes.leads} Leads · ROAS {formatWert(bestes.roas, "faktor")}</div>
                 </div>
               )}
               {teuerstes && teuerstes.id !== bestes?.id && (
-                <div className="rounded-2xl border border-line p-4">
+                <div className="rounded-[20px] border border-[var(--glass-border)] bg-surface-2 p-4 shadow-[inset_0_1px_0_var(--glass-edge)]">
                   <div className="text-[12px] font-semibold uppercase tracking-wider text-bad-ink">Teuerstes aktives Creative</div>
                   <div className="mt-1 font-medium">{teuerstes.name}{status.get(teuerstes.id)?.fatigue ? " · ausgebrannt" : ""}</div>
                   <div className="mt-1 text-[13px] text-ink-2">{teuerstes.kostenShow != null ? `${fw("kostenShow", teuerstes.kostenShow)} pro Show` : "noch keine Show"} · {formatWert(teuerstes.spend, "eur")} ausgegeben</div>

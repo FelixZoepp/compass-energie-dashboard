@@ -47,7 +47,7 @@ export function ZeitraumText() {
   return <p className="mt-3 text-[13px] font-semibold text-ink">{prefix}: {datum(z.von)}{+z.von !== +bis ? ` bis ${datum(bis)}` : ""}</p>;
 }
 
-const sel = "h-10 rounded-xl border border-line bg-surface px-3 text-[14px] text-ink outline-none focus:border-accent";
+const sel = "h-10 rounded-full border border-[var(--glass-border)] bg-[var(--glass-strong)] px-4 text-[14px] text-ink outline-none shadow-[inset_0_1px_0_var(--glass-edge)] backdrop-blur focus:border-accent";
 
 export function ZeitraumPillen() {
   const { sp, set, laedt } = useSetzen();
@@ -57,10 +57,10 @@ export function ZeitraumPillen() {
   const aktiveFilter = ["quelle", "kampagne", "rep", "typ", "sicht", "vgl"].filter((k) => sp.get(k)).length;
   return (
     <div className="no-print relative flex w-full min-w-0 flex-wrap items-center gap-2 xl:w-auto xl:justify-end">
-      <div className="flex max-w-full overflow-x-auto rounded-full border border-line bg-surface p-1 shadow-[var(--shadow)]" role="group" aria-label="Zeitraum">
+      <div className="glass flex max-w-full overflow-x-auto rounded-full p-1" role="group" aria-label="Zeitraum">
         {HAUPT.map((k) => (
           <button key={k} type="button" onClick={() => set({ z: k === "monat" ? "" : k, von: "", bis: "" })}
-            className={`whitespace-nowrap rounded-full px-4 py-2 text-[14px] font-medium transition ${z === k ? "bg-brand-700 text-white shadow" : "text-ink hover:bg-surface-2"}`}>
+            className={`whitespace-nowrap rounded-full px-4 py-2 text-[14px] font-medium transition ${z === k ? "liquid-pill-aktiv" : "text-ink hover:bg-surface-2"}`}>
             {KURZ[k] ?? ZEITRAUM_LABEL[k]}
           </button>
         ))}
@@ -70,7 +70,7 @@ export function ZeitraumPillen() {
         {WEITERE.map((k) => <option key={k} value={k}>{ZEITRAUM_LABEL[k]}</option>)}
       </select>
       <button type="button" onClick={() => setOffen((o) => !o)} aria-expanded={offen}
-        className="inline-flex h-10 items-center gap-2 rounded-xl border border-line bg-surface px-3 text-[14px] text-ink hover:border-accent">
+        className="inline-flex h-10 items-center gap-2 rounded-full border border-[var(--glass-border)] bg-[var(--glass-strong)] px-4 text-[14px] text-ink shadow-[inset_0_1px_0_var(--glass-edge)] backdrop-blur hover:border-accent">
         <SlidersHorizontal className="h-4 w-4" /> Filter{aktiveFilter ? <span className="rounded-full bg-brand-700 px-1.5 text-[11px] text-white">{aktiveFilter}</span> : null}
       </button>
       {laedt && <span className="text-xs text-muted">lädt …</span>}
@@ -81,7 +81,7 @@ export function ZeitraumPillen() {
         </div>
       )}
       {offen && (
-        <div className="absolute right-0 top-12 z-40 w-[min(92vw,360px)] rounded-3xl border border-line bg-surface p-5 shadow-2xl">
+        <div className="glass glass-strong absolute right-0 top-12 z-40 w-[min(92vw,360px)] rounded-[28px] p-5 shadow-2xl">
           <div className="mb-3 flex items-center justify-between"><span className="font-semibold">Filter</span>
             <button type="button" aria-label="Schließen" onClick={() => setOffen(false)} className="rounded-full p-1 hover:bg-surface-2"><X className="h-4 w-4" /></button></div>
           <div className="flex flex-col gap-3 text-[13px] text-ink-2">
@@ -90,7 +90,7 @@ export function ZeitraumPillen() {
                 {(["ereignis", "kohorte"] as const).map((s) => {
                   const aktiv = (sp.get("sicht") ?? "ereignis") === s;
                   return <button key={s} type="button" onClick={() => set({ sicht: s === "ereignis" ? "" : s })}
-                    className={`flex-1 rounded-full px-3 py-1.5 text-[13px] ${aktiv ? "bg-brand-700 text-white" : "text-ink"}`}
+                    className={`flex-1 rounded-full px-3 py-1.5 text-[13px] ${aktiv ? "liquid-pill-aktiv" : "text-ink"}`}
                     title={s === "ereignis" ? "Jedes Ereignis zählt an seinem Datum" : "Alles wird dem Eintragungsdatum des Leads zugeordnet"}>
                     {s === "ereignis" ? "Ereignis" : "Kohorte (Lead-Datum)"}</button>;
                 })}
