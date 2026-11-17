@@ -26,7 +26,7 @@ export default async function Einstellungen() {
     .map((k) => ({ id: k.id, label: k.label, einheit: k.einheit, richtung: k.richtung!, gruen: k.gruen!, gelb: k.gelb! }));
   return (
     <>
-      <SeitenKopf titel="Einstellungen" klartext={live ? "Ziele, Ampeln und Kosten steuern alle Bewertungen im Dashboard." : "Demo-Modus: Formulare sind sichtbar, Speichern ist erst nach der Supabase-Anbindung möglich."} />
+      <SeitenKopf titel="Einstellungen" ohneZeitraum klartext={live ? "Ziele, Ampeln und Kosten steuern alle Bewertungen im Dashboard." : "Demo-Modus: Formulare sind sichtbar, Speichern ist erst nach der Supabase-Anbindung möglich."} />
       <div className="flex flex-col gap-3">
         <EinstellungenForm settings={ds.settings} reps={ds.reps} kpis={kpis} live={live} />
         <Benutzerverwaltung profile={profile} reps={ds.reps.map((r) => ({ id: r.id, name: r.name }))} live={live} meineRolle={nutzer.rolle} />

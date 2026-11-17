@@ -1,6 +1,6 @@
 // Gemeinsame Bausteine. Server-tauglich (keine Hooks).
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { ArrowUpRight, Info } from "lucide-react";
 import { ZeitraumPillen, ZeitraumText } from "./zeitraum";
 import { KPIS, ampel as ampelFn, formatWert, zielText, type Ampel, type KpiDef, type KpiId } from "@/lib/kpi/katalog";
@@ -34,10 +34,10 @@ export function SeitenKopf({ titel, klartext, children, ohneZeitraum }: { titel:
       <div className="min-w-0">
         <h1 className="text-3xl font-semibold tracking-tight sm:text-[40px] sm:leading-[1.1]">{titel}</h1>
         {klartext && <p className="mt-2 max-w-3xl text-[15px] leading-relaxed text-ink-2">{klartext}</p>}
-        {!ohneZeitraum && <ZeitraumText />}
+        {!ohneZeitraum && <Suspense><ZeitraumText /></Suspense>}
       </div>
       <div className="flex w-full min-w-0 flex-col items-start gap-2 xl:w-auto xl:items-end">
-        {!ohneZeitraum && <ZeitraumPillen />}
+        {!ohneZeitraum && <Suspense><ZeitraumPillen /></Suspense>}
         {children}
       </div>
     </div>
