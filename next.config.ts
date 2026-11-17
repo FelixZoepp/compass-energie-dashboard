@@ -2,8 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  cacheComponents: true,
-  partialPrefetching: true,
+  // Durchgehend dynamisch (Live-Daten, Rollen) → kein Cache Components / PPR
   turbopack: {
     rules: {
       "*.css": {
