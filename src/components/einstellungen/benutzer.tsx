@@ -5,14 +5,12 @@ import { Abschnitt, Feld, eingabe } from "./feld";
 
 export interface Profil { id: string; email: string; name: string | null; rolle: string; rep_id: string | null; aktiv: boolean }
 
-const ROLLEN = [
-  { id: "admin", label: "Admin – alles inkl. Einstellungen" },
-  { id: "management", label: "Management – alles lesen" },
-  { id: "marketing", label: "Marketing – Meta, Funnel, Planung" },
-  { id: "rep", label: "Rep – eigene Zahlen, Team, Mein Tag" },
-];
+import { STUFEN, darfVerwalten } from "@/lib/auth/stufen";
 
-export function Benutzerverwaltung({ profile, reps, live }: { profile: Profil[]; reps: { id: string; name: string }[]; live: boolean }) {
+const ALLE_ROLLEN = STUFEN.map((s) => ({ id: s.rolle, label: `Stufe ${s.stufe} · ${s.label} – ${s.beschreibung}`, kurz: `Stufe ${s.stufe} · ${s.label}` }));
+
+export function Benutzerverwaltung({ profile, reps, live, meineRolle = "admin" }: { profile: Profil[]; reps: { id: string; name: string }[]; live: boolean; meineRolle?: string }) {
+  const ROLLEN = ALLE_ROLLEN.filter((r) => darfVerwalten(meineRolle, r.id));
   const router = useRouter();
   const [neu, setNeu] = useState({ email: "", name: "", rolle: "rep", repId: "" });
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -35,19 +33,21 @@ export function Benutzerverwaltung({ profile, reps, live }: { profile: Profil[];
 
   return (
     <section className="card p-4 sm:p-5">
-      <Abschnitt titel="Benutzer und Rollen" beschreibung="Eingeladene Personen bekommen eine E-Mail von Supabase und legen ihr Passwort selbst fest. Reps sehen nur ihre eigenen Zahlen – dafür den passenden Close-User zuordnen.">
-        {!live ? <p className="text-sm text-muted">Im Demo-Modus gibt es keine Benutzer. Nach der Supabase-Anbindung wird der erste angemeldete Nutzer automatisch Admin (oder per <code>npx tsx scripts/admin-anlegen.ts</code>).</p> : (
+      <Abschnitt titel="Benutzer und Stufen" beschreibung="Eingeladene Personen bekommen eine E-Mail von Supabase und legen ihr Passwort selbst fest. Reps sehen nur ihre eigenen Zahlen – dafür den passenden Close-User zuordnen.">
+        {!live ? <p className="text-sm text-muted">Im Demo-Modus gibt es keine Benutzer. Nach der Supabase-Anbindung wird der erste angemeldete Nutzer automatisch Stufe 1 (Inhaber) (oder per <code>npx tsx scripts/admin-anlegen.ts</code>).</p> : (
           <div className="scroll-x">
             <table className="w-full min-w-[720px] text-sm">
-              <thead><tr className="text-left text-xs text-muted"><th className="pb-2 pr-2 font-medium">Name / E-Mail</th><th className="pb-2 pr-2 font-medium">Rolle</th><th className="pb-2 pr-2 font-medium">Close-User (Rep)</th><th className="pb-2 font-medium">Aktiv</th></tr></thead>
+              <thead><tr className="text-left text-xs text-muted"><th className="pb-2 pr-2 font-medium">Name / E-Mail</th><th className="pb-2 pr-2 font-medium">Stufe</th><th className="pb-2 pr-2 font-medium">Close-User (Rep)</th><th className="pb-2 font-medium">Aktiv</th></tr></thead>
               <tbody>
                 {profile.map((p) => (
                   <tr key={p.id} className="border-t border-line">
                     <td className="py-2 pr-2"><div className="font-medium">{p.name || p.email}</div><div className="text-xs text-muted">{p.email}</div></td>
                     <td className="py-2 pr-2">
-                      <select className={eingabe} disabled={laedt} value={p.rolle} onChange={(e) => senden("PATCH", { id: p.id, rolle: e.target.value })}>
-                        {ROLLEN.map((r) => <option key={r.id} value={r.id}>{r.id}</option>)}
-                      </select>
+                      {darfVerwalten(meineRolle, p.rolle) ? (
+                        <select className={eingabe} disabled={laedt} value={p.rolle} onChange={(e) => senden("PATCH", { id: p.id, rolle: e.target.value })}>
+                          {ROLLEN.map((r) => <option key={r.id} value={r.id}>{r.kurz}</option>)}
+                        </select>
+                      ) : <span className="text-sm font-medium">{ALLE_ROLLEN.find((r) => r.id === p.rolle)?.kurz ?? p.rolle}</span>}
                     </td>
                     <td className="py-2 pr-2">
                       <select className={eingabe} disabled={laedt} value={p.rep_id ?? ""} onChange={(e) => senden("PATCH", { id: p.id, repId: e.target.value || null })}>
@@ -65,7 +65,7 @@ export function Benutzerverwaltung({ profile, reps, live }: { profile: Profil[];
         <form onSubmit={einladen} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5 lg:items-end">
           <Feld label="E-Mail"><input type="email" required className={eingabe} value={neu.email} onChange={(e) => setNeu({ ...neu, email: e.target.value })} disabled={!live} /></Feld>
           <Feld label="Name"><input className={eingabe} value={neu.name} onChange={(e) => setNeu({ ...neu, name: e.target.value })} disabled={!live} /></Feld>
-          <Feld label="Rolle">
+          <Feld label="Stufe">
             <select className={eingabe} value={neu.rolle} onChange={(e) => setNeu({ ...neu, rolle: e.target.value })} disabled={!live}>
               {ROLLEN.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
             </select>

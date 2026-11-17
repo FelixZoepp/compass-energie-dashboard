@@ -23,7 +23,8 @@ export async function seite(pfad: string, sp: SP, defaults: { zeitraum?: Zeitrau
   const raw = await sp;
   const params = Object.fromEntries(Object.entries(raw).map(([k, v]) => [k, eins(v)]));
   const ds = await ladeDataset({ frisch: params.frisch === "1" });
-  const z = zeitraum((params.z as ZeitraumKey) || defaults.zeitraum || "monat", new Date(), { von: params.von, bis: params.bis });
+  const key = (params.z as ZeitraumKey) || defaults.zeitraum || "monat";
+  const z = zeitraum(key, new Date(), { von: key === "gesamt" ? datenStart(ds) ?? undefined : params.von, bis: params.bis });
   const f: Filter = {
     zeitraum: z,
     sicht: (params.sicht as Sicht) === "kohorte" ? "kohorte" : "ereignis",
@@ -39,4 +40,12 @@ export async function seite(pfad: string, sp: SP, defaults: { zeitraum?: Zeitrau
 export function delta(a: number | null | undefined, b: number | null | undefined): number | null {
   if (a == null || b == null || !Number.isFinite(a) || !Number.isFinite(b) || b === 0) return null;
   return (a - b) / Math.abs(b);
+}
+
+/** Frühestes Datum in den Daten (Start für „Gesamt“). */
+export function datenStart(ds: Dataset): string | null {
+  let min = Infinity;
+  for (const l of ds.leads) { const t = Date.parse(l.createdAt); if (t < min) min = t; }
+  for (const i of ds.insights) { const t = Date.parse(i.date + "T00:00:00"); if (t < min) min = t; }
+  return Number.isFinite(min) ? new Date(min).toISOString().slice(0, 10) : null;
 }

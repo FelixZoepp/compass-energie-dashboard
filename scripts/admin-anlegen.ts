@@ -14,7 +14,7 @@ async function main() {
   const passwort = randomBytes(12).toString("base64url");
   const { data, error } = await sb.auth.admin.createUser({ email: email.toLowerCase(), password: passwort, email_confirm: true });
   if (error) { console.error(`Anlegen fehlgeschlagen: ${error.message}`); process.exit(1); }
-  const { error: e2 } = await sb.from("profiles").upsert({ id: data.user.id, email: email.toLowerCase(), name: nameTeile.join(" ") || email, rolle: "admin", aktiv: true });
+  const { error: e2 } = await sb.from("profiles").upsert({ id: data.user.id, email: email.toLowerCase(), name: nameTeile.join(" ") || email, rolle: process.argv.includes("--stufe2") ? "admin" : "superadmin", aktiv: true });
   if (e2) { console.error(`Profil fehlgeschlagen: ${e2.message} (schema.sql eingespielt?)`); process.exit(1); }
   console.log(`Admin angelegt: ${email}\nPasswort (nur jetzt sichtbar): ${passwort}\nNach dem ersten Login unter /passwort ändern.`);
 }

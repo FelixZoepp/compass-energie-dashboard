@@ -1,18 +1,24 @@
 // Gemeinsame Bausteine. Server-tauglich (keine Hooks).
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Info } from "lucide-react";
+import { ArrowUpRight, Info } from "lucide-react";
+import { ZeitraumPillen, ZeitraumText } from "./zeitraum";
 import { KPIS, ampel as ampelFn, formatWert, zielText, type Ampel, type KpiDef, type KpiId } from "@/lib/kpi/katalog";
 import type { Settings } from "@/lib/types";
 
 export const cx = (...a: (string | false | null | undefined)[]) => a.filter(Boolean).join(" ");
 
-export function Card({ children, className, titel, aktion, id }: { children: ReactNode; className?: string; titel?: ReactNode; aktion?: ReactNode; id?: string }) {
+export function Card({ children, className, titel, untertitel, aktion, id, variante }: {
+  children: ReactNode; className?: string; titel?: ReactNode; untertitel?: ReactNode; aktion?: ReactNode; id?: string; variante?: "brand";
+}) {
   return (
-    <section id={id} className={cx("card p-4 sm:p-5 min-w-0", className)}>
+    <section id={id} className={cx(variante === "brand" ? "card-brand" : "card", "min-w-0 p-5 sm:p-6", className)}>
       {(titel || aktion) && (
-        <div className="mb-3 flex items-center justify-between gap-3">
-          {titel && <h2 className="text-sm font-semibold text-ink">{titel}</h2>}
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            {titel && <h2 className={cx("text-[17px] font-semibold tracking-tight", variante === "brand" ? "text-white" : "text-ink")}>{titel}</h2>}
+            {untertitel && <p className={cx("mt-0.5 text-[13px]", variante === "brand" ? "text-white/70" : "text-ink-2")}>{untertitel}</p>}
+          </div>
           {aktion}
         </div>
       )}
@@ -21,16 +27,30 @@ export function Card({ children, className, titel, aktion, id }: { children: Rea
   );
 }
 
-/** Seitenkopf mit Klartext-Antwort („Antworten statt Zahlenfriedhof“). */
-export function SeitenKopf({ titel, klartext, children }: { titel: string; klartext?: ReactNode; children?: ReactNode }) {
+/** Seitenkopf: großer Titel, Klartext-Antwort, Zeitraum-Zeile, Zeitraum-Pillen rechts. */
+export function SeitenKopf({ titel, klartext, children, ohneZeitraum }: { titel: string; klartext?: ReactNode; children?: ReactNode; ohneZeitraum?: boolean }) {
   return (
-    <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mb-6 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
       <div className="min-w-0">
-        <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">{titel}</h1>
-        {klartext && <p className="mt-1 text-[15px] text-ink-2">{klartext}</p>}
+        <h1 className="text-3xl font-semibold tracking-tight sm:text-[40px] sm:leading-[1.1]">{titel}</h1>
+        {klartext && <p className="mt-2 max-w-3xl text-[15px] leading-relaxed text-ink-2">{klartext}</p>}
+        {!ohneZeitraum && <ZeitraumText />}
       </div>
-      {children}
+      <div className="flex w-full min-w-0 flex-col items-start gap-2 xl:w-auto xl:items-end">
+        {!ohneZeitraum && <ZeitraumPillen />}
+        {children}
+      </div>
     </div>
+  );
+}
+
+/** Pfeil-Knopf oben rechts in Karten (wie im Design-Vorbild). */
+export function PfeilKnopf({ href, hell }: { href: string; hell?: boolean }) {
+  return (
+    <Link href={href} aria-label="Details" className={cx("grid h-10 w-10 shrink-0 place-items-center rounded-full border transition",
+      hell ? "border-transparent bg-white text-brand-700 hover:scale-105" : "border-line text-ink hover:border-accent hover:text-accent")}>
+      <ArrowUpRight className="h-4 w-4" />
+    </Link>
   );
 }
 
@@ -48,7 +68,7 @@ const AMPEL_TEXT: Record<Ampel, string> = { gruen: "im Ziel", gelb: "knapp", rot
 export function AmpelPill({ a, text }: { a: Ampel; text?: string }) {
   if (a === "neutral" && !text) return null;
   return (
-    <span className={cx("inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium", AMPEL_KLASSE[a])}>
+    <span className={cx("inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium", AMPEL_KLASSE[a])}>
       <span className={cx("h-1.5 w-1.5 rounded-full", AMPEL_PUNKT[a])} aria-hidden />
       {text ?? AMPEL_TEXT[a]}
     </span>
@@ -78,14 +98,14 @@ export function InfoTip({ def }: { def: KpiDef }) {
   );
 }
 
-function Sparkline({ werte }: { werte: number[] }) {
+function Sparkline({ werte, hell }: { werte: number[]; hell?: boolean }) {
   if (werte.length < 2 || werte.every((w) => w === 0)) return null;
   const max = Math.max(...werte), min = Math.min(...werte);
   const w = 120, h = 22;
   const pts = werte.map((v, i) => `${(i / (werte.length - 1)) * w},${h - 2 - ((v - min) / (max - min || 1)) * (h - 4)}`).join(" ");
   return (
     <svg width="100%" height={h} viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="overflow-visible" aria-hidden>
-      <polyline points={pts} fill="none" stroke="var(--s1)" strokeWidth={2} vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round" />
+      <polyline points={pts} fill="none" stroke={hell ? "rgba(255,255,255,.85)" : "var(--brand-400)"} strokeWidth={2} vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round" />
     </svg>
   );
 }
@@ -101,42 +121,46 @@ export function DeltaText({ d, richtung = "hoch", label }: { d: number | null; r
   );
 }
 
-/** KPI-Kachel: Wert, Δ Vorperiode, Ziel, Ampel, Mini-Trend, Definition. */
+/** KPI-Kachel: Wert, Δ Vorperiode, Ziel, Ampel, Mini-Trend, Definition. `hervor` = dunkelgrüne Highlight-Karte. */
 export function Kachel({
-  id, wert, vorher, basis, settings, href, spark, gross, zielOverride, untertitel,
+  id, wert, vorher, basis, settings, href, spark, gross, zielOverride, untertitel, hervor, label,
 }: {
   id: KpiId; wert: number | null | undefined; vorher?: number | null; basis?: number; settings?: Settings; href?: string;
-  spark?: number[]; gross?: boolean; zielOverride?: string | null; untertitel?: string;
+  spark?: number[]; gross?: boolean; zielOverride?: string | null; untertitel?: string; hervor?: boolean; label?: string;
 }) {
   const def = KPIS[id] as KpiDef;
   const a = ampelFn(id, wert, basis, settings);
   const d = vorher != null && wert != null && vorher !== 0 ? (wert - vorher) / Math.abs(vorher) : null;
   const ziel = zielOverride !== undefined ? zielOverride : zielText(id, settings);
-  const inhalt = (
-    <div className={cx("card flex h-full flex-col gap-1.5 p-4 transition", href && "hover:border-accent")}>
-      <div className="flex items-center justify-between gap-2">
-        <span className="flex items-center gap-1.5 text-xs font-medium text-ink-2">{def.label} <InfoTip def={def} /></span>
-        <AmpelPill a={a} />
+  return (
+    <div className={cx(hervor ? "card-brand" : "card", "flex h-full min-w-0 flex-col p-5 sm:p-6")}>
+      <div className="flex items-start justify-between gap-2">
+        <span className={cx("flex items-center gap-1.5 text-[15px] font-medium", hervor ? "text-white/90" : "text-ink")}>
+          {label ?? def.label} {!hervor && <InfoTip def={def} />}
+        </span>
+        {href ? <PfeilKnopf href={href} hell={hervor} /> : !hervor && <AmpelPill a={a} />}
       </div>
-      <span className={cx("whitespace-nowrap font-semibold tracking-tight tabular", gross ? "text-3xl" : "text-2xl", a === "grau" && "text-muted")}>{formatWert(wert, def.einheit, true)}</span>
-      {spark && <Sparkline werte={spark} />}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
-        {vorher !== undefined && <DeltaText d={d} richtung={def.richtung} label="ggü. Vorperiode" />}
-        {ziel && <span className="text-xs text-muted">Ziel {ziel}</span>}
-        {untertitel && <span className="text-xs text-muted">{untertitel}</span>}
+      <span className={cx("mt-4 whitespace-nowrap font-semibold tracking-tight tabular", gross ? "text-[44px] leading-none" : "text-[36px] leading-none", !hervor && a === "grau" && "text-muted")}>
+        {formatWert(wert, def.einheit, true)}
+      </span>
+      {spark && <div className={cx("mt-3", hervor && "opacity-80")}><Sparkline werte={spark} hell={hervor} /></div>}
+      <div className={cx("mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 pt-3 text-[13px]", hervor ? "text-white/75" : "text-ink-2")}>
+        {untertitel && <span>{untertitel}</span>}
+        {vorher !== undefined && (hervor ? <span className="tabular">{d == null ? "–" : `${d >= 0 ? "▲" : "▼"} ${Math.abs(d * 100).toLocaleString("de-DE", { maximumFractionDigits: 0 })} % ggü. Vorperiode`}</span> : <DeltaText d={d} richtung={def.richtung} label="ggü. Vorperiode" />)}
+        {ziel && <span className={hervor ? "" : "text-muted"}>Ziel {ziel}</span>}
+        {href && !hervor && a !== "neutral" && <AmpelPill a={a} />}
       </div>
     </div>
   );
-  return href ? <Link href={href} className="block">{inhalt}</Link> : inhalt;
 }
 
 export function Leer({ children }: { children: ReactNode }) {
-  return <div className="rounded-lg border border-dashed border-line p-6 text-center text-sm text-muted">{children}</div>;
+  return <div className="rounded-2xl border border-dashed border-line p-6 text-center text-sm text-muted">{children}</div>;
 }
 
 export function Grid({ children, cols = 3, className }: { children: ReactNode; cols?: 2 | 3 | 4 | 6; className?: string }) {
-  const c = { 2: "sm:grid-cols-2", 3: "sm:grid-cols-2 lg:grid-cols-3", 4: "sm:grid-cols-2 lg:grid-cols-4", 6: "grid-cols-2 lg:grid-cols-3 xl:grid-cols-6" }[cols];
-  return <div className={cx("grid gap-3", cols === 6 ? "" : "grid-cols-1", c, className)}>{children}</div>;
+  const c = { 2: "sm:grid-cols-2", 3: "sm:grid-cols-2 lg:grid-cols-3", 4: "sm:grid-cols-2 xl:grid-cols-4", 6: "sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6" }[cols];
+  return <div className={cx("grid grid-cols-1 gap-4", c, className)}>{children}</div>;
 }
 
 export const closeLink = (leadId: string) => `https://app.close.com/lead/${leadId}/`;

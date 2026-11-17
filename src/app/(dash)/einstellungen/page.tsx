@@ -9,7 +9,7 @@ import { Benutzerverwaltung, type Profil } from "@/components/einstellungen/benu
 import { SyncStatus, type SyncRun } from "@/components/einstellungen/sync-status";
 
 export default async function Einstellungen() {
-  await erfordere("/einstellungen");
+  const nutzer = await erfordere("/einstellungen");
   const ds = await ladeDataset();
   const live = supabaseKonfiguriert();
   let profile: Profil[] = [];
@@ -29,7 +29,7 @@ export default async function Einstellungen() {
       <SeitenKopf titel="Einstellungen" klartext={live ? "Ziele, Ampeln und Kosten steuern alle Bewertungen im Dashboard." : "Demo-Modus: Formulare sind sichtbar, Speichern ist erst nach der Supabase-Anbindung möglich."} />
       <div className="flex flex-col gap-3">
         <EinstellungenForm settings={ds.settings} reps={ds.reps} kpis={kpis} live={live} />
-        <Benutzerverwaltung profile={profile} reps={ds.reps.map((r) => ({ id: r.id, name: r.name }))} live={live} />
+        <Benutzerverwaltung profile={profile} reps={ds.reps.map((r) => ({ id: r.id, name: r.name }))} live={live} meineRolle={nutzer.rolle} />
         <SyncStatus runs={runs} live={live} />
       </div>
     </>

@@ -2,7 +2,7 @@
 
 import type { Settings } from "../types";
 
-export type ZeitraumKey = "heute" | "gestern" | "woche" | "7t" | "monat" | "vormonat" | "quartal" | "30t" | "90t" | "frei";
+export type ZeitraumKey = "heute" | "gestern" | "woche" | "7t" | "monat" | "vormonat" | "quartal" | "30t" | "90t" | "gesamt" | "frei";
 export type Vergleich = "vorperiode" | "vorjahr" | "aus";
 
 export interface Zeitraum {
@@ -22,6 +22,7 @@ export const ZEITRAUM_LABEL: Record<ZeitraumKey, string> = {
   quartal: "Quartal",
   "30t": "Letzte 30 Tage",
   "90t": "Letzte 90 Tage",
+  gesamt: "Gesamt",
   frei: "Frei",
 };
 
@@ -39,6 +40,7 @@ export function zeitraum(key: ZeitraumKey, now = new Date(), frei?: { von?: stri
     case "7t": von = addDays(heute, -6); bis = morgen; break;
     case "30t": von = addDays(heute, -29); bis = morgen; break;
     case "90t": von = addDays(heute, -89); bis = morgen; break;
+    case "gesamt": von = frei?.von ? startOfDay(new Date(frei.von)) : addDays(heute, -364); bis = morgen; break;
     case "vormonat": von = new Date(heute.getFullYear(), heute.getMonth() - 1, 1); bis = new Date(heute.getFullYear(), heute.getMonth(), 1); break;
     case "quartal": von = new Date(heute.getFullYear(), Math.floor(heute.getMonth() / 3) * 3, 1); bis = morgen; break;
     case "frei": {

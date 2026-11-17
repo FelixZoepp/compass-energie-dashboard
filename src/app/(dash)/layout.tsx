@@ -1,20 +1,16 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
-import { BEREICHE, nutzer } from "@/lib/auth";
+import { BEREICHE, darf, nutzer, stufenLabel } from "@/lib/auth";
 import { ladeDataset } from "@/lib/data";
-import { FilterLeiste } from "@/components/filter-leiste";
-import { Navigation } from "@/components/navigation";
+import { datenStart } from "@/lib/seite";
+import { Kopfleiste, Sidebar } from "@/components/navigation";
+import { DatenProvider } from "@/components/zeitraum";
 
-export const dynamic = "force-dynamic";
+const TZ = "Europe/Berlin";
 
-function standText(iso: string) {
-  const min = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
-  if (new Date(iso).getTime() <= 0) return "noch kein Sync";
-  if (min < 1) return "Stand: gerade eben";
-  if (min < 120) return `Stand: vor ${min} Min.`;
-  return `Stand: ${new Date(iso).toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" })}`;
+function zeitText(iso: string) {
+  return new Date(iso).toLocaleString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: TZ });
 }
-
 function istVeraltet(iso: string) {
   return Date.now() - new Date(iso).getTime() > 3 * 3600000;
 }
@@ -23,25 +19,27 @@ export default async function DashLayout({ children }: { children: React.ReactNo
   const n = await nutzer();
   if (!n) redirect("/login");
   const ds = await ladeDataset();
-  const erlaubt = Object.entries(BEREICHE).filter(([, r]) => r.includes(n.rolle)).map(([p]) => p);
+  const erlaubt = Object.keys(BEREICHE).filter((p) => darf(n.rolle, p));
   const kampagnen = [...new Map(ds.ads.map((a) => [a.campaignId, { id: a.campaignId, name: a.campaignName }])).values()];
-  const veraltet = ds.quelle === "supabase" && istVeraltet(ds.stand);
+  const keinSync = new Date(ds.stand).getTime() <= 0;
+  const veraltet = ds.quelle === "supabase" && !keinSync && istVeraltet(ds.stand);
+  const stand = keinSync ? "noch kein Sync" : zeitText(ds.stand) + " Uhr";
+  const standZeit = keinSync ? "–" : new Date(ds.stand).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: TZ }) + " Uhr";
+  const initialen = n.name.split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((x) => x[0]?.toUpperCase()).join("") || "CE";
   return (
-    <div className="flex min-h-screen flex-col lg:flex-row">
-      <Suspense><Navigation erlaubt={erlaubt} name={n.name} rolle={n.rolle} demo={n.demo} /></Suspense>
-      <main className="min-w-0 flex-1 px-4 pb-16 sm:px-6">
-        {ds.syncFehler && <div className="-mx-4 mb-0 bg-bad px-4 py-2 text-sm font-medium text-white sm:-mx-6 sm:px-6">Sync-Fehler: {ds.syncFehler}</div>}
-        {ds.quelle === "demo" && (
-          <div className="-mx-4 bg-warn-soft px-4 py-2 text-[13px] text-warn-ink sm:-mx-6 sm:px-6">
-            <strong>Demo-Daten.</strong> Noch keine echten Daten angebunden – alle Zahlen sind simuliert. Sobald Supabase, Close und Meta verbunden sind, erscheinen hier die echten Werte.
-          </div>
-        )}
-        {veraltet && <div className="-mx-4 bg-bad-soft px-4 py-2 text-[13px] text-bad-ink sm:-mx-6 sm:px-6">Letzter erfolgreicher Sync ist über 3 Stunden her.</div>}
-        <Suspense>
-          <FilterLeiste optionen={{ kampagnen, reps: ds.reps.filter((r) => r.aktiv).map((r) => ({ id: r.id, name: r.name })), zeigeRep: n.rolle !== "rep" }} standText={standText(ds.stand)} />
-        </Suspense>
-        {children}
-      </main>
-    </div>
+    <DatenProvider wert={{ start: datenStart(ds), kampagnen, reps: ds.reps.filter((r) => r.aktiv).map((r) => ({ id: r.id, name: r.name })), zeigeRep: n.rolle !== "rep" }}>
+      <div className="flex min-h-screen">
+        <Suspense><Sidebar erlaubt={erlaubt} demo={ds.quelle === "demo"} quellenText={ds.quelle === "demo" ? "Simuliert" : "Close · Meta"} standZeit={standZeit} /></Suspense>
+        <div className="min-w-0 flex-1 p-3 sm:p-4">
+          <Suspense>
+            <Kopfleiste standText={ds.quelle === "demo" ? `Demo-Daten · noch keine echten Zahlen angebunden` : `Zahlen live · Stand ${stand}`}
+              name={n.demo ? "Demo-Modus" : n.name} stufe={n.demo ? "ohne Login" : stufenLabel(n.rolle)} initialen={n.demo ? "CE" : initialen} erlaubt={erlaubt} demo={n.demo} />
+          </Suspense>
+          {ds.syncFehler && <div className="mb-4 rounded-2xl bg-bad px-5 py-3 text-sm font-medium text-white">Sync-Fehler: {ds.syncFehler}</div>}
+          {veraltet && <div className="mb-4 rounded-2xl bg-bad-soft px-5 py-3 text-sm text-bad-ink">Letzter erfolgreicher Sync ist über 3 Stunden her.</div>}
+          <main className="min-h-[calc(100vh-8rem)] rounded-[32px] bg-panel px-4 py-6 sm:px-8 sm:py-9">{children}</main>
+        </div>
+      </div>
+    </DatenProvider>
   );
 }
