@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 export interface LogZeile { id: number; at: string; lead_id: string | null; regel: string; beschreibung: string | null; ok: boolean; trocken: boolean; fehler: string | null }
 
 const GRUPPEN = [
+  { id: "lead", label: "0 · Neuer Lead", text: "Neuer Lead in Close → Status „Neu“ + Aufgabe „sofort anrufen“ für den Setter" },
   { id: "erstkontakt", label: "1 · Erstkontakt (Terminierung)", text: "Nicht erreicht → Sperre · Erstgespräch terminiert → Opp „Setting“ · Rückruf → Aufgabe" },
   { id: "erstgespraech", label: "2 · Erstgespräch (Setting)", text: "Beratung terminiert → Opp „Closing terminiert“ · No-Show → Rückholaufgabe · Follow-up → Aufgabe" },
   { id: "closing", label: "3 · Beratung (Closing)", text: "Angebot → Opp „Angebot“ + Nachfassen Tag 1/3/7 · Gewonnen → Kunde · Verloren → Verlustgrund, Sperre" },

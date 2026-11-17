@@ -243,3 +243,40 @@ export async function verarbeiteProtokoll(activityId: string, jetzt: Date = new 
   if (zeilen.length) await sb.from("automatik_log").insert(zeilen);
   return `Protokoll ${activityId} (${typ}): ${zusammenfassung.join(", ") || "keine Aktion"}`;
 }
+
+// ---------------------------------------------------------------------------
+// Neuer Lead (Close-Webhook lead.created): Status „Neu“ + Aufgabe „sofort anrufen“ für den Setter.
+
+export function regelNeuerLead(jetzt: Date = new Date()): RegelErgebnis {
+  return {
+    regel: "lead.neu",
+    beschreibung: "Neuer Lead → Status „Neu“, Aufgabe „sofort anrufen“ (Speed-to-Lead < 5 Min.)",
+    aktionen: [
+      { art: "lead_status", status: "neu" },
+      { art: "aufgabe", text: "🔥 Neuer Inbound-Lead – sofort anrufen (Ziel: unter 5 Minuten)", datum: jetzt.toISOString(), an: "bearbeiter" },
+    ],
+  };
+}
+
+export async function verarbeiteNeuenLead(leadId: string, jetzt: Date = new Date()): Promise<string> {
+  const cl = new CloseClient();
+  const sb = adminClient();
+  const ctx = await kontext(cl);
+  const e = regelNeuerLead(jetzt);
+  // Setter-Feld als Bearbeiter, sonst Lead-Besitzer (Close weist sonst dem API-Nutzer zu)
+  const setterFeld = (await cl.alle("custom_field/lead/")).find((f: any) => f.name === LEAD_FELDER.setter.name)?.id;
+  const lead = await cl.get(`lead/${leadId}/`);
+  const bearbeiter: string | null = (setterFeld && lead[`custom.${setterFeld}`]) || null;
+  // Leads, die schon einen Ablauf-Status haben (z. B. vom Funnel gesetzt), nicht zurücksetzen
+  const eigene = Object.values(LEAD_STATUS).map((x) => x.toLowerCase());
+  const aktionen = eigene.includes((lead.status_label ?? "").toLowerCase()) ? e.aktionen.filter((a) => a.art !== "lead_status") : e.aktionen;
+  const an = regelAn(await automatikEinstellung(), e.regel);
+  try {
+    const log = an ? await fuehreAus(cl, ctx, leadId, aktionen, bearbeiter) : [];
+    await sb.from("automatik_log").insert({ lead_id: leadId, regel: e.regel, beschreibung: e.beschreibung, aktionen, ergebnis: log, ok: true, trocken: !an });
+    return `Neuer Lead ${leadId}: ${e.regel}${an ? "" : " (trocken)"}`;
+  } catch (err) {
+    await sb.from("automatik_log").insert({ lead_id: leadId, regel: e.regel, beschreibung: e.beschreibung, aktionen, ok: false, trocken: !an, fehler: (err as Error).message.slice(0, 500) });
+    return `Neuer Lead ${leadId}: FEHLER`;
+  }
+}

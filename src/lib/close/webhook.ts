@@ -78,6 +78,10 @@ export async function verarbeiteEvent(ev: WebhookEvent): Promise<string> {
     case "lead": {
       const ids = await feldIds(cl);
       await upsert("leads", [leadZeile(await cl.get(`lead/${id}/`), ids.lead, await icpMinTeam())]);
+      if (ev.action === "created") {
+        const { verarbeiteNeuenLead } = await import("./automatik");
+        return `lead ${id} · ${await verarbeiteNeuenLead(id)}`;
+      }
       return `lead ${id}`;
     }
     case "opportunity":
