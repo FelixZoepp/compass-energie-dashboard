@@ -1,11 +1,29 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "regions": ["fra1"],
+  "framework": "nextjs",
+  "regions": [
+    "fra1"
+  ],
   "crons": [
-    { "path": "/api/sync/close", "schedule": "0 3 * * *" },
-    { "path": "/api/sync/meta?tage=28", "schedule": "0 4 * * *" },
-    { "path": "/api/sync/meta-creatives", "schedule": "30 4 * * *" },
-    { "path": "/api/reports/daily", "schedule": "30 6 * * *" },
-    { "path": "/api/reports/weekly", "schedule": "0 7 * * 1" }
+    {
+      "path": "/api/sync/close",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/sync/meta?tage=28",
+      "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/sync/meta-creatives",
+      "schedule": "30 4 * * *"
+    },
+    {
+      "path": "/api/reports/daily",
+      "schedule": "30 6 * * *"
+    },
+    {
+      "path": "/api/reports/weekly",
+      "schedule": "0 7 * * 1"
+    }
   ]
 }
