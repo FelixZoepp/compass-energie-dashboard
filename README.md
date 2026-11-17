@@ -78,6 +78,62 @@ Es werden keine Nachrichten verschickt und keine Daten an Meta gesendet, bevor d
 - `CAPI_AKTIV=1`: Ereignisse (Lead qualifiziert, Erstgespräch stattgefunden, Gewonnen mit Wert) an Meta senden. Vorschau: `/api/capi/push?trocken=1`, Test: `?test_event_code=TEST…`
 - `REPORTS_AKTIV=1` + `SLACK_WEBHOOK_URL`: Morgen-Briefing und Wochenreport senden. Vorschau: `/api/reports/daily?vorschau=1`
 
+## Close-CRM
+
+Angelegt per `npm run close:setup -- --anwenden` (idempotent, Standard ist ein Trockenlauf, nichts wird gelöscht). Struktur nach Vorbild der Zoepp-Cloud, alle IDs werden über Namen aufgelöst.
+
+**Pipeline „Vertrieb TRIAS 360“:** Setting → Setting No-Show → Closing terminiert → Closing No-Show → Closing FU → CC2 → Angebot → Gewonnen / Verloren
+
+**Lead-Status:** Neu, Kontaktversuch, Erstgespräch terminiert, Beratung terminiert, Follow-up, Angebot, Kunde, Nicht qualifiziert, Verloren, Bad Data (die Close-Standardstatus bleiben bestehen)
+
+**Lead-Felder für Abläufe:** `Gesperrt bis` (blendet Leads aus den Anruflisten aus), `Erstgespräch am`, `Beratung am`, `Setter`, `Closer`
+
+### Gesprächsprotokolle (Custom Activities)
+| Protokoll | Wer | Ergebnisse |
+|---|---|---|
+| 1 - Erstkontakt (Terminierung) | Setter | Erstgespräch terminiert · Rückruf vereinbart · Nicht erreicht · Kein Interesse · Nicht qualifiziert · Bad Data |
+| 2 - Erstgespräch (Setting) | Setter | Beratung terminiert · Follow-up / Rückruf · Nicht qualifiziert · No-Show · Verschoben · Abgesagt (+ Qualifizierung GS 1–4, Closer, Notizen für den Closer) |
+| 3 - Beratungsgespräch (Closing) | Closer | Gewonnen · Angebot verschickt · Follow-up · CC2 terminiert · Verloren · No-Show · Verschoben · Abgesagt · Nicht qualifiziert (+ Paket, Plätze, Preis, Zahlungsart, Verlustgrund) |
+| 4 - Follow-up | beide | Erstgespräch terminiert · Beratung terminiert · Gewonnen · Weiter Follow-up · Verloren · Nicht erreicht |
+
+### Smart Views (Tabs)
+0.9 Offene Deals ohne Bewegung > 7 Tage · **1.0 Neue Inbound-Leads – sofort anrufen** · 1.1 Kontaktversuche offen · 1.2 Erstgespräche heute · 1.3 No-Show Erstgespräch zurückholen · 1.4 Setting-Follow-ups fällig · **2.0 Beratungen heute** · 2.1 Closing-Follow-ups fällig · 2.2 Offene Angebote > 3 Tage · 2.3 No-Show Beratung zurückholen · 2.4 CC2 · 3.0 Kunden · 3.1 Verloren – Reaktivierung fällig · 3.2 Nicht qualifiziert
+
+Gesperrte Leads (`Gesperrt bis` in der Zukunft) erscheinen in den Anruf-Views erst wieder, wenn die Sperre abgelaufen ist.
+
+### Protokoll-Automatik
+Close-Webhook `activity.custom_activity` → `src/lib/close/regeln.ts` (reine Regeln, getestet mit `npm test`) → `src/lib/close/automatik.ts` (führt in Close aus). Jedes Protokoll landet in `close_protokolle`, jede Regel in `automatik_log`. Wenn sich die Schlüsselfelder nicht ändern (z. B. nur die Notiz), werden die Aktionen nicht erneut ausgeführt. Leads mit Status „Kunde“ werden nie zurückgestuft. **Es gehen keine Nachrichten an Leads raus**, nur interne Änderungen und Aufgaben.
+
+| Protokoll → Ergebnis | Aktion in Close |
+|---|---|
+| Erstkontakt → Erstgespräch terminiert | Lead „Erstgespräch terminiert“, `Erstgespräch am`, Setter = Bearbeiter, Opp „Setting“ (anlegen), Sperre aufheben |
+| Erstkontakt → Rückruf vereinbart | Lead „Kontaktversuch“, gesperrt bis Rückruf, Rückruf-Aufgabe |
+| Erstkontakt → Nicht erreicht | Lead „Kontaktversuch“, 2 Std. gesperrt (bzw. bis Kalender) |
+| Erstkontakt → Kein Interesse | Opps verloren („Kein Bedarf“), Lead „Verloren“, 3 Monate gesperrt, Notiz |
+| … → Nicht qualifiziert | Lead „Nicht qualifiziert“, Opps verloren (Grund), 3 Monate gesperrt – mit Kalender: bis dahin + Rückruf-Aufgabe |
+| Erstkontakt → Bad Data / falsche Nummer | Lead „Bad Data“, Opps verloren |
+| Erstgespräch → Beratung terminiert | Lead „Beratung terminiert“, `Beratung am`, Closer/Setter, Kundentyp/Teamgröße/Rolle an den Lead, Opp „Closing terminiert“ |
+| Erstgespräch → Follow-up / Abgesagt | Lead „Follow-up“, Opp „Setting“, gesperrt bis Termin, Aufgabe |
+| Erstgespräch → No-Show | Opp „Setting No-Show“, Rückhol-Aufgabe |
+| Erstgespräch → Verschoben | neuer `Erstgespräch am`, Opp „Setting“ |
+| Closing → Gewonnen | Lead „Kunde“, Opp gewonnen mit Wert/Paket/Plätzen/Zahlungsart; ohne Wert Aufgabe „Auftragswert nachtragen“; offene Nachfass-Aufgaben erledigt |
+| Closing → Angebot verschickt | Lead „Angebot“, Opp „Angebot“ (Wert, Datum) + eigene Regel: Nachfass-Aufgaben Tag 1/3/7 |
+| Closing → Follow-up | Lead „Follow-up“, Opp „Closing FU“, gesperrt bis Termin, Aufgabe |
+| Closing → CC2 terminiert | Opp „CC2“, `Beratung am` = CC2-Termin |
+| Closing → No-Show | Opp „Closing No-Show“, Rückhol-Aufgabe |
+| Closing → Verschoben / Abgesagt | Opp „Closing terminiert“ + neuer Termin / Rückruf-Aufgabe |
+| … → Verloren | Opps verloren (Verlustgrund), Lead „Verloren“, gesperrt bis Kalender oder 3 Monate, Notiz → taucht danach in 3.1 Reaktivierung auf |
+| Follow-up → Erstgespräch / Beratung terminiert / Gewonnen | wie oben (Closer = „Gelegt auf“) |
+| Follow-up → Weiter Follow-up / Nicht erreicht | gesperrt bis Termin (bzw. 1 Tag), Aufgabe |
+
+**Einschalten:** Standard ist AUS. Dann wird nur protokolliert, was passieren würde (`automatik_log.trocken = true`). Einschalten über `settings.data.automatik`:
+```json
+{ "automatik": { "aktiv": true, "regeln": { "closing.angebot_nachfassen": false } } }
+```
+Einzelne Regeln lassen sich mit `false` abschalten (IDs: `REGEL_IDS` in `src/lib/close/regeln.ts`). Voraussetzungen: Supabase-Migration `supabase/migrations/002_protokolle.sql` (steht auch am Ende von `schema.sql`) und der Close-Webhook inkl. `activity.custom_activity` (`npm run close:webhook -- https://<domain>/api/webhooks/close`).
+
+**Echttest:** `npm run close:probe -- --anwenden` spielt den Ablauf mit einem Test-Lead durch (Kontaktversuch → Erstgespräch → Beratung → Angebot → Gewonnen), prüft Lead-Status/Opp/Aufgaben und löscht den Test-Lead danach.
+
 ## Entwicklung
 
 ```bash

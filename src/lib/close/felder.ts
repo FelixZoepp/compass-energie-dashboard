@@ -9,6 +9,8 @@ export const PIPELINE_STATUS: { label: string; type: "active" | "won" | "lost"; 
   { label: "Closing FU", type: "active", stage: "closing_fu" },
   { label: "Angebot", type: "active", stage: "angebot" },
   { label: "CC2", type: "active", stage: "cc2" },
+  { label: "Setting No-Show", type: "active", stage: "setting" },
+  { label: "Closing No-Show", type: "active", stage: "closing_terminiert" },
   { label: "Gewonnen", type: "won", stage: "won" },
   { label: "Verloren", type: "lost", stage: "lost" },
 ];
@@ -35,7 +37,39 @@ export const LEAD_FELDER = {
   teamgroesse: { name: "Teamgröße", type: "number", description: "Anzahl Vertriebler" },
   setter: { name: "Setter", type: "user" },
   closer: { name: "Closer", type: "user" },
+  gesperrtBis: { name: "Gesperrt bis", type: "datetime", description: "Bis dahin aus den Anruflisten (Smart Views) ausgeblendet – setzt die Protokoll-Automatik" },
+  erstgespraechAm: { name: "Erstgespräch am", type: "datetime", description: "Nächstes Erstgespräch (aus Protokoll/Calendly)" },
+  beratungAm: { name: "Beratung am", type: "datetime", description: "Nächstes Beratungsgespräch/CC2 (aus Protokoll/Calendly)" },
 } satisfies Record<string, FeldDef>;
+
+/** Lead-Status nach Zoepp-Muster. Die Close-Standardstatus bleiben unangetastet (nicht löschen). */
+export const LEAD_STATUS = {
+  neu: "Neu",
+  kontaktversuch: "Kontaktversuch",
+  egTerminiert: "Erstgespräch terminiert",
+  beratungTerminiert: "Beratung terminiert",
+  followup: "Follow-up",
+  angebot: "Angebot",
+  kunde: "Kunde",
+  nichtQualifiziert: "Nicht qualifiziert",
+  verloren: "Verloren",
+  badData: "Bad Data",
+} as const;
+export type LeadStatusKey = keyof typeof LEAD_STATUS;
+
+/** Opp-Status-Label der Pipeline je Ziel (für die Automatik). */
+export const OPP_STATUS = {
+  setting: "Setting",
+  closingTerminiert: "Closing terminiert",
+  closingFu: "Closing FU",
+  angebot: "Angebot",
+  cc2: "CC2",
+  settingNoShow: "Setting No-Show",
+  closingNoShow: "Closing No-Show",
+  gewonnen: "Gewonnen",
+  verloren: "Verloren",
+} as const;
+export type OppStatusKey = keyof typeof OPP_STATUS;
 
 export const OPP_FELDER = {
   paket: { name: "Paket", type: "choices", choices: ["Einzelplatz", "Team", "Inhouse"] },

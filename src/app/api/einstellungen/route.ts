@@ -49,7 +49,10 @@ export async function POST(req: Request) {
     const body = (await req.json()) as { settings?: Partial<Settings>; reps?: { id: string; rolle: string; aktiv: boolean }[] };
     const sb = adminClient();
     if (body.settings) {
-      const { error } = await sb.from("settings").upsert({ id: 1, data: bereinigen(body.settings), updated_at: new Date().toISOString() });
+      // Felder, die andere Bereiche verwalten (z. B. automatik), beim Speichern erhalten
+      const { data: alt } = await sb.from("settings").select("data").eq("id", 1).maybeSingle();
+      const behalten = { automatik: (alt?.data as Record<string, unknown> | undefined)?.automatik };
+      const { error } = await sb.from("settings").upsert({ id: 1, data: { ...bereinigen(body.settings), ...behalten }, updated_at: new Date().toISOString() });
       if (error) throw new Error(error.message);
     }
     for (const r of body.reps ?? []) {

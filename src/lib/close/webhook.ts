@@ -68,6 +68,7 @@ export async function verarbeiteEvent(ev: WebhookEvent): Promise<string> {
   if (!id) return "ohne object_id ignoriert";
 
   if (ev.action === "deleted") {
+    if (typ === "activity.custom_activity") { await sb.from("close_protokolle").delete().eq("id", id); return `Protokoll ${id} gelöscht`; }
     const tabelle = typ === "lead" ? "leads" : typ === "opportunity" ? "opportunities" : typ === "activity.meeting" ? "meetings" : typ === "activity.call" ? "calls" : typ.startsWith("task") ? "tasks" : null;
     if (tabelle) await sb.from(tabelle).delete().eq("id", id);
     return `${typ} ${id} gelöscht`;
@@ -132,6 +133,14 @@ export async function verarbeiteEvent(ev: WebhookEvent): Promise<string> {
         await sb.from("opportunities").update({ hat_naechste_aufgabe: (offen.data ?? []).length > 0 }).eq("lead_id", t.lead_id).not("stage", "in", "(won,lost)");
       }
       return `task ${id}`;
+    }
+    case "activity.custom_activity": {
+      // Gesprächsprotokolle → Automatik (standardmäßig aus = nur protokollieren)
+      if (ev.action !== "created" && ev.action !== "updated") return `custom_activity ${ev.action} ignoriert`;
+      const { verarbeiteProtokoll } = await import("./automatik");
+      const leadId = ev.lead_id ?? ev.data?.lead_id;
+      if (leadId) await leadSicherstellen(cl, leadId);
+      return await verarbeiteProtokoll(id);
     }
     default: {
       // Unbekannter Typ → inkrementeller Abgleich als Sicherheitsnetz

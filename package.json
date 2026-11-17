@@ -11,7 +11,9 @@
     "close:setup": "tsx scripts/close-setup.ts",
     "close:webhook": "tsx scripts/close-webhook.ts",
     "admin:anlegen": "tsx scripts/admin-anlegen.ts",
-    "sync": "tsx --conditions=react-server scripts/sync.ts"
+    "sync": "tsx --conditions=react-server scripts/sync.ts",
+    "test": "tsx --test src/lib/close/__tests__/*.test.ts",
+    "close:probe": "tsx --conditions=react-server scripts/automatik-probe.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

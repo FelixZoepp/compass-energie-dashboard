@@ -4,7 +4,7 @@
 import { args } from "./_env";
 import { CloseClient } from "../src/lib/close/client";
 
-const OBJEKTE = ["lead", "opportunity", "activity.meeting", "activity.call", "activity.opportunity_status_change", "task.lead"];
+const OBJEKTE = ["lead", "opportunity", "activity.meeting", "activity.call", "activity.opportunity_status_change", "activity.custom_activity", "task.lead"];
 
 async function main() {
   const url = args.find((a) => a.startsWith("https://"));
