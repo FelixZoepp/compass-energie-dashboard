@@ -5,7 +5,7 @@ Stand 17.11.2026. Grundlage: Spezifikation „02 – Führungs-Dashboard TRIAS 3
 ## Jetzt (in Arbeit)
 - Führungs-Dashboard (Cockpit, Meta Ads, Sales-Funnel, Setting, Closing, Team/Leaderboard/TV, Pipeline, Planungsrechner, Mein Tag, Datenqualität, Einstellungen)
 - Close-Sync + Webhook, Meta-Sync (Insights, Creatives, Breakdowns), Supabase-Schema, Login mit Rollen
-- Close-Setup-Skript (Pipeline „Vertrieb TRIAS 360“, Lead-/Opp-Felder, Meeting-Outcomes)
+- Close-Setup-Skript (Pipeline „Setting / Closing Pipeline“, Status, Felder und Protokolle 1:1 wie Zoepp-Org, Meeting-Outcomes)
 
 ## Als Nächstes (Notiz Felix, 17.11.)
 Compass schaltet Ads für das Vertriebstraining → Inbound-Leads. Alles soll komplett verbunden sein, „wie bei uns in der Zoepp-Cloud“ im Sales- und Marketing-Bereich:

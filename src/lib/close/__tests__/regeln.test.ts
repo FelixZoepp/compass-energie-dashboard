@@ -19,17 +19,25 @@ test("Erstkontakt: Erstgespräch terminiert → Status, Termin, Setter, Opp Sett
   assert.equal(finde(r.aktionen, "opp")?.ziel, "setting");
 });
 
-test("Erstkontakt: nicht erreicht → Kontaktversuch + kurze Sperre", () => {
-  const r = regeln("erstkontakt", { erreicht: "Nein / Mailbox", ergebnis: ERGEBNIS.erstkontakt.nichtErreicht }, jetzt);
+test("Erstkontakt: niemand erreicht → Leadpool + kurze Sperre", () => {
+  const r = regeln("erstkontakt", { erreicht: "Niemand / Mailbox" }, jetzt);
   assert.equal(r.regel, "erstkontakt.nicht_erreicht");
   const bis = new Date(finde(r.aktionen, "lead_felder")!.felder.gesperrtBis as string).getTime();
   assert.equal(bis - jetzt.getTime(), SPERRE_NICHT_ERREICHT_STUNDEN * 3600_000);
 });
 
-test("Erstkontakt: Kein Interesse → verloren, 3 Monate gesperrt, Notiz", () => {
-  const r = regeln("erstkontakt", { ergebnis: ERGEBNIS.erstkontakt.keinInteresse }, jetzt);
+test("Erstkontakt: Kein Interesse - 3M/6M → verloren, 3 bzw. 6 Monate gesperrt, Notiz", () => {
+  const r = regeln("erstkontakt", { ergebnis: ERGEBNIS.erstkontakt.keinInteresse3 }, jetzt);
   assert.deepEqual(arten(r.aktionen), ["opps_verloren", "lead_status", "lead_felder", "notiz"]);
   assert.equal(finde(r.aktionen, "lead_felder")?.felder.gesperrtBis, "2027-02-18T10:00:00.000Z");
+  const r6 = regeln("erstkontakt", { ergebnis: ERGEBNIS.erstkontakt.keinInteresse6 }, jetzt);
+  assert.equal(finde(r6.aktionen, "lead_felder")?.felder.gesperrtBis, "2027-05-18T10:00:00.000Z");
+});
+
+test("Erstkontakt: Gatekeeper-Rückruf → Interessiert + Aufgabe", () => {
+  const r = regeln("erstkontakt", { erreicht: "Gatekeeper / Assistenz", gatekeeper: "Rückruf vereinbart am:", kalender: morgen }, jetzt);
+  assert.equal(r.regel, "erstkontakt.rueckruf");
+  assert.equal(finde(r.aktionen, "lead_status")?.status, "followup");
 });
 
 test("Erstgespräch: Beratung terminiert → Closer + Qualifizierung an den Lead, Opp Closing terminiert", () => {
@@ -85,10 +93,11 @@ test("Closing: Verloren → Verlustgrund übernommen", () => {
   assert.equal(finde(r.aktionen, "lead_status")?.status, "verloren");
 });
 
-test("Closing: CC2 / No-Show / Follow-up setzen die passende Stufe", () => {
+test("CC2 / No-Show / Follow-up setzen die passende Stufe", () => {
   assert.equal(finde(regeln("closing", { ergebnis: ERGEBNIS.closing.cc2, kalender: morgen }, jetzt).aktionen, "opp")?.ziel, "cc2");
   assert.equal(finde(regeln("closing", { ergebnis: ERGEBNIS.closing.noShow }, jetzt).aktionen, "opp")?.ziel, "closingNoShow");
-  assert.equal(finde(regeln("closing", { ergebnis: ERGEBNIS.closing.followup }, jetzt).aktionen, "opp")?.ziel, "closingFu");
+  assert.equal(finde(regeln("followup", { art: "Closing-Follow-up", ergebnis: ERGEBNIS.followup.weiter }, jetzt).aktionen, "opp")?.ziel, "closingFu");
+  assert.equal(finde(regeln("followup", { art: "Setting-Follow-up", ergebnis: ERGEBNIS.followup.weiter }, jetzt).aktionen, "opp")?.ziel, "settingFu");
 });
 
 test("Follow-up: Beratung terminiert nutzt „Gelegt auf“ als Closer", () => {
@@ -118,8 +127,8 @@ test("Jede Regel-ID aus den Ergebnissen ist in REGEL_IDS dokumentiert", () => {
 
 test("Smart Views: alle IDs vorhanden → nichts fehlt, Namen eindeutig", () => {
   const ids = {
-    leadStatus: { neu: "s1", kontaktversuch: "s2", egTerminiert: "s3", beratungTerminiert: "s4", followup: "s5", angebot: "s6", kunde: "s7", nichtQualifiziert: "s8", verloren: "s9", badData: "s10" },
-    oppStatus: { setting: "o1", closingTerminiert: "o2", closingFu: "o3", angebot: "o4", cc2: "o5", settingNoShow: "o6", closingNoShow: "o7", gewonnen: "o8", verloren: "o9" },
+    leadStatus: { neu: "s1", kontaktversuch: "s2", egTerminiert: "s3", beratungTerminiert: "s4", followup: "s5", angebot: "s6", kunde: "s7", exKunde: "s11", nichtQualifiziert: "s8", verloren: "s9", badData: "s10" },
+    oppStatus: { setting: "o1", closingTerminiert: "o2", closingFu: "o3", angebot: "o4", cc2: "o5", settingNoShow: "o6", settingFu: "o10", closingNoShow: "o7", gewonnen: "o8", verloren: "o9" },
     feld: { gesperrtBis: "cf_a", erstgespraechAm: "cf_b", beratungAm: "cf_c" },
   };
   const v = smartViews(ids);

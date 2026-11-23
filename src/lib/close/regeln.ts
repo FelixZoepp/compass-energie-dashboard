@@ -57,11 +57,11 @@ const uhrzeit = (d: Date) => d.toLocaleTimeString("de-DE", { timeZone: "Europe/B
 const leer = (regel: string, beschreibung = "keine Aktion"): RegelErgebnis => ({ regel, beschreibung, aktionen: [] });
 
 /** Verloren: Opp verloren, Lead „Verloren“, gesperrt bis Kalender (sonst 3 Monate) + Notiz. */
-function verloren(regel: string, f: Felder, jetzt: Date, grund: string | null): RegelErgebnis {
-  const bis = inZukunft(f.kalender, jetzt) ? new Date(f.kalender!) : plusMonate(jetzt, SPERRE_VERLOREN_MONATE);
+function verloren(regel: string, f: Felder, jetzt: Date, grund: string | null, monate = SPERRE_VERLOREN_MONATE): RegelErgebnis {
+  const bis = inZukunft(f.kalender, jetzt) ? new Date(f.kalender!) : plusMonate(jetzt, monate);
   return {
     regel,
-    beschreibung: "Verloren → Opp verloren, Lead „Verloren“, Sperre, Notiz",
+    beschreibung: "Verloren → Opp verloren, Lead „Disqualifiziert“, Sperre, Notiz",
     aktionen: [
       { art: "opps_verloren", grund },
       { art: "lead_status", status: "verloren" },
@@ -76,10 +76,10 @@ function nichtQualifiziert(regel: string, f: Felder, jetzt: Date, grund: string 
   const bis = mitRueckruf ? new Date(f.kalender!) : plusMonate(jetzt, SPERRE_VERLOREN_MONATE);
   return {
     regel,
-    beschreibung: "Nicht qualifiziert → Lead „Nicht qualifiziert“, Opps verloren, Sperre" + (mitRueckruf ? " + Rückruf-Aufgabe" : ""),
+    beschreibung: "Unqualifiziert → Lead „Unqualifiziert“, Opps verloren, Sperre" + (mitRueckruf ? " + Rückruf-Aufgabe" : ""),
     aktionen: [
       { art: "lead_status", status: "nichtQualifiziert" },
-      { art: "opps_verloren", grund: grund ?? "Kein Bedarf" },
+      { art: "opps_verloren", grund: grund ?? "Kein Bedarf (GS 1)" },
       { art: "lead_felder", felder: { gesperrtBis: iso(bis) } },
       ...(mitRueckruf ? [{ art: "aufgabe" as const, text: `📞 Rückruf ${uhrzeit(bis)} Uhr – damals nicht qualifiziert${grund ? `: ${grund}` : ""}. Prüfen, ob es jetzt passt.`, datum: iso(bis), an: "bearbeiter" as const }] : []),
     ],
@@ -89,7 +89,7 @@ function nichtQualifiziert(regel: string, f: Felder, jetzt: Date, grund: string 
 function erstgespraechTerminiert(regel: string, f: Felder, bearbeiter: string | null): RegelErgebnis {
   return {
     regel,
-    beschreibung: "Erstgespräch terminiert → Lead-Status, Termin, Setter, Opp „Setting“, Sperre aufheben",
+    beschreibung: "Setting vereinbart → Lead „Setting“, Termin, Setter, Opp „Setting - Terminiert“, Sperre aufheben",
     aktionen: [
       { art: "lead_status", status: "egTerminiert" },
       { art: "lead_felder", felder: { erstgespraechAm: f.kalender ?? null, gesperrtBis: null, ...(bearbeiter ? { setter: bearbeiter } : {}) } },
@@ -101,7 +101,7 @@ function erstgespraechTerminiert(regel: string, f: Felder, bearbeiter: string | 
 function beratungTerminiert(regel: string, f: Felder, closer: string | null, setter: string | null): RegelErgebnis {
   return {
     regel,
-    beschreibung: "Beratung terminiert → Lead-Status, Termin, Closer/Setter, Opp „Closing terminiert“, Sperre aufheben",
+    beschreibung: "Beratungsgespräch gelegt → Lead „Closing“, Termin, Closer/Setter, Opp „Closing - Terminiert“, Sperre aufheben",
     aktionen: [
       { art: "lead_status", status: "beratungTerminiert" },
       {
@@ -125,7 +125,7 @@ function gewonnen(regel: string, f: Felder): RegelErgebnis {
   const wert = num(f.preis);
   return {
     regel,
-    beschreibung: "Gewonnen → Lead „Kunde“, Opp gewonnen mit Wert/Paket/Plätzen" + (wert == null ? " + Aufgabe Auftragswert nachtragen" : ""),
+    beschreibung: "Abgeschlossen → Lead „Kunde“, Opp „Close“ mit Wert/Paket/Plätzen" + (wert == null ? " + Aufgabe Auftragswert nachtragen" : ""),
     aktionen: [
       { art: "lead_status", status: "kunde" },
       { art: "lead_felder", felder: { gesperrtBis: null } },
@@ -146,18 +146,24 @@ export function regeln(typ: ProtokollTyp, f: Felder, jetzt: Date = new Date(), b
   switch (typ) {
     case "erstkontakt": {
       const E = ERGEBNIS.erstkontakt;
-      if (startsWith(e, E.egTerminiert)) return erstgespraechTerminiert("erstkontakt.erstgespraech_terminiert", f, bearbeiter);
+      const setter = f.gelegtAuf ?? bearbeiter;
+      if (startsWith(e, E.egTerminiert)) return erstgespraechTerminiert("erstkontakt.erstgespraech_terminiert", f, setter);
       if (startsWith(e, E.nichtQualifiziert)) return nichtQualifiziert("erstkontakt.nicht_qualifiziert", f, jetzt, null);
-      if (startsWith(e, E.keinInteresse)) return verloren("erstkontakt.kein_interesse", f, jetzt, "Kein Bedarf");
-      if (startsWith(e, "Bad Data") || startsWith(f.erreicht, "Falsche Nummer"))
-        return { regel: "erstkontakt.bad_data", beschreibung: "Bad Data → Lead „Bad Data“, Opps verloren", aktionen: [{ art: "lead_status", status: "badData" }, { art: "opps_verloren", grund: "Nicht erreichbar" }] };
-      if (startsWith(e, E.rueckruf)) {
-        const { d, aufgabe } = rueckrufAufgabe("📞 Rückruf vereinbart – Erstgespräch terminieren", f, jetzt, 24);
-        return { regel: "erstkontakt.rueckruf", beschreibung: "Rückruf → Lead „Kontaktversuch“, Sperre bis Rückruf, Aufgabe", aktionen: [{ art: "lead_status", status: "kontaktversuch" }, { art: "lead_felder", felder: { gesperrtBis: iso(d) } }, aufgabe] };
+      if (startsWith(e, E.keinInteresse3)) return verloren("erstkontakt.kein_interesse", f, jetzt, "Kein Bedarf (GS 1)", 3);
+      if (startsWith(e, E.keinInteresse6)) return verloren("erstkontakt.kein_interesse", f, jetzt, "Kein Bedarf (GS 1)", 6);
+      if (startsWith(e, E.badData))
+        return { regel: "erstkontakt.bad_data", beschreibung: "Bad Data → Lead „Bad Data“, Opps verloren", aktionen: [{ art: "lead_status", status: "badData" }, { art: "opps_verloren", grund: "Nicht mehr erreichbar (Ghosting)" }] };
+      if (startsWith(e, E.selbstBuchung)) {
+        const { d, aufgabe } = rueckrufAufgabe("📅 Wollte sich selbst einbuchen – prüfen, ob ein Termin da ist, sonst anrufen", f, jetzt, 48);
+        return { regel: "erstkontakt.selbst_buchung", beschreibung: "Bucht sich selbst ein → Lead „Interessiert“, Sperre, Prüf-Aufgabe", aktionen: [{ art: "lead_status", status: "followup" }, { art: "lead_felder", felder: { gesperrtBis: iso(d) } }, aufgabe] };
       }
-      if (startsWith(e, E.nichtErreicht) || startsWith(f.erreicht, "Nein")) {
+      if (startsWith(e, E.rueckruf) || startsWith(f.gatekeeper, "Rückruf")) {
+        const { d, aufgabe } = rueckrufAufgabe("📞 Rückruf vereinbart – Setting terminieren", f, jetzt, 24);
+        return { regel: "erstkontakt.rueckruf", beschreibung: "Rückruf → Lead „Interessiert“, Sperre bis Rückruf, Aufgabe", aktionen: [{ art: "lead_status", status: "followup" }, { art: "lead_felder", felder: { gesperrtBis: iso(d) } }, aufgabe] };
+      }
+      if (startsWith(f.erreicht, "Niemand") || startsWith(f.erreicht, "Gatekeeper") || f.gatekeeper) {
         const bis = inZukunft(f.kalender, jetzt) ? new Date(f.kalender!) : new Date(jetzt.getTime() + SPERRE_NICHT_ERREICHT_STUNDEN * STUNDE);
-        return { regel: "erstkontakt.nicht_erreicht", beschreibung: `Nicht erreicht → Lead „Kontaktversuch“, ${SPERRE_NICHT_ERREICHT_STUNDEN} Std. gesperrt`, aktionen: [{ art: "lead_status", status: "kontaktversuch" }, { art: "lead_felder", felder: { gesperrtBis: iso(bis) } }] };
+        return { regel: "erstkontakt.nicht_erreicht", beschreibung: `Nicht erreicht / Gatekeeper → bleibt „Leadpool“, ${SPERRE_NICHT_ERREICHT_STUNDEN} Std. (oder bis Kalender) gesperrt`, aktionen: [{ art: "lead_status", status: "kontaktversuch" }, { art: "lead_felder", felder: { gesperrtBis: iso(bis) } }] };
       }
       return leer("erstkontakt.ohne_ergebnis");
     }
@@ -166,11 +172,12 @@ export function regeln(typ: ProtokollTyp, f: Felder, jetzt: Date = new Date(), b
       const E = ERGEBNIS.erstgespraech;
       if (startsWith(e, E.beratungTerminiert)) return beratungTerminiert("erstgespraech.beratung_terminiert", f, f.closer ?? null, bearbeiter);
       if (startsWith(e, E.nichtQualifiziert)) return nichtQualifiziert("erstgespraech.nicht_qualifiziert", f, jetzt, f.grund ?? null);
+      if (startsWith(e, E.disqualifiziert)) return verloren("erstgespraech.disqualifiziert", f, jetzt, f.grund ?? null);
       if (startsWith(e, E.noShow)) {
         const bis = new Date(jetzt.getTime() + SPERRE_NICHT_ERREICHT_STUNDEN * STUNDE);
         return {
           regel: "erstgespraech.no_show",
-          beschreibung: "No-Show → Opp „Setting No-Show“, Rückhol-Aufgabe heute",
+          beschreibung: "No-Show → Opp „Setting - No Show“, Rückhol-Aufgabe heute",
           aktionen: [
             { art: "opp", ziel: "settingNoShow", anlegen: true },
             { art: "lead_felder", felder: { gesperrtBis: iso(bis) } },
@@ -179,17 +186,17 @@ export function regeln(typ: ProtokollTyp, f: Felder, jetzt: Date = new Date(), b
         };
       }
       if (startsWith(e, E.verschoben)) {
-        return { regel: "erstgespraech.verschoben", beschreibung: "Verschoben → neuer Erstgespräch-Termin, Opp „Setting“", aktionen: [{ art: "lead_felder", felder: { erstgespraechAm: f.kalender ?? null } }, { art: "opp", ziel: "setting", anlegen: true, abschlussDatum: f.kalender ?? null }] };
+        return { regel: "erstgespraech.verschoben", beschreibung: "Verschoben → neuer Setting-Termin, Opp „Setting - Terminiert“", aktionen: [{ art: "lead_felder", felder: { erstgespraechAm: f.kalender ?? null } }, { art: "opp", ziel: "setting", anlegen: true, abschlussDatum: f.kalender ?? null }] };
       }
       if (startsWith(e, "Follow-up") || startsWith(e, E.abgesagt)) {
         const abgesagt = startsWith(e, E.abgesagt);
         const { d, aufgabe } = rueckrufAufgabe(abgesagt ? "📞 Erstgespräch abgesagt – anrufen und neu terminieren" : "🔁 Setting-Follow-up", f, jetzt, 24);
         return {
           regel: abgesagt ? "erstgespraech.abgesagt" : "erstgespraech.followup",
-          beschreibung: `${abgesagt ? "Abgesagt" : "Follow-up"} → Lead „Follow-up“, Opp „Setting“, Sperre bis Termin, Aufgabe`,
+          beschreibung: `${abgesagt ? "Abgesagt" : "Follow-up"} → Lead „Interessiert“, Opp „Setting - Follow Up“, Sperre bis Termin, Aufgabe`,
           aktionen: [
             { art: "lead_status", status: "followup" },
-            { art: "opp", ziel: "setting", anlegen: true },
+            { art: "opp", ziel: "settingFu", anlegen: true },
             { art: "lead_felder", felder: { gesperrtBis: iso(d), ...(bearbeiter ? { setter: bearbeiter } : {}) } },
             aufgabe,
           ],
@@ -205,40 +212,33 @@ export function regeln(typ: ProtokollTyp, f: Felder, jetzt: Date = new Date(), b
         const wert = num(f.preis);
         return {
           regel: "closing.angebot",
-          beschreibung: "Angebot verschickt → Lead „Angebot“, Opp „Angebot“ (Wert, Paket, Datum)",
+          beschreibung: "Angebot versendet → Lead „Closing“, Opp „Angebot verschickt“ (Wert, Paket, Datum)",
           aktionen: [
             { art: "lead_status", status: "angebot" },
             { art: "opp", ziel: "angebot", anlegen: true, wert, paket: f.paket ?? null, plaetze: num(f.plaetze), zahlungsart: f.zahlungsart ?? null, angebotAm: iso(jetzt), abschlussDatum: f.kalender ?? null },
           ],
         };
       }
-      if (startsWith(e, E.followup)) {
-        const { d, aufgabe } = rueckrufAufgabe("🔁 Closing-Follow-up", f, jetzt, 48);
-        return {
-          regel: "closing.followup",
-          beschreibung: "Follow-up → Lead „Follow-up“, Opp „Closing FU“, Sperre bis Termin, Aufgabe",
-          aktionen: [{ art: "lead_status", status: "followup" }, { art: "opp", ziel: "closingFu", anlegen: true, abschlussDatum: iso(d) }, { art: "lead_felder", felder: { gesperrtBis: iso(d) } }, aufgabe],
-        };
-      }
       if (startsWith(e, E.cc2)) {
-        return { regel: "closing.cc2", beschreibung: "CC2 → Opp „CC2“, Beratung-am = CC2-Termin", aktionen: [{ art: "opp", ziel: "cc2", anlegen: true, abschlussDatum: f.kalender ?? null }, { art: "lead_felder", felder: { beratungAm: f.kalender ?? null, gesperrtBis: null } }] };
+        return { regel: "closing.cc2", beschreibung: "CC2 → Opp „CC2 - Terminiert“, Closing Termin = CC2-Termin", aktionen: [{ art: "opp", ziel: "cc2", anlegen: true, abschlussDatum: f.kalender ?? null }, { art: "lead_felder", felder: { beratungAm: f.kalender ?? null, gesperrtBis: null } }] };
       }
       if (startsWith(e, E.verloren)) return verloren("closing.verloren", f, jetzt, f.verlustgrund ?? null);
       if (startsWith(e, E.noShow)) {
         return {
           regel: "closing.no_show",
-          beschreibung: "No-Show → Opp „Closing No-Show“, Rückhol-Aufgabe heute",
+          beschreibung: "No-Show → Opp „Closing - No Show“, Rückhol-Aufgabe heute",
           aktionen: [{ art: "opp", ziel: "closingNoShow", anlegen: true }, { art: "aufgabe", text: "❌ No-Show Beratungsgespräch – anrufen und neu terminieren.", datum: iso(jetzt), an: "bearbeiter" }],
         };
       }
       if (startsWith(e, E.verschoben)) {
-        return { regel: "closing.verschoben", beschreibung: "Verschoben → Opp „Closing terminiert“, neuer Termin", aktionen: [{ art: "opp", ziel: "closingTerminiert", anlegen: true, abschlussDatum: f.kalender ?? null }, { art: "lead_felder", felder: { beratungAm: f.kalender ?? null } }] };
+        return { regel: "closing.verschoben", beschreibung: "Verschoben → Opp „Closing - Terminiert“, neuer Termin", aktionen: [{ art: "opp", ziel: "closingTerminiert", anlegen: true, abschlussDatum: f.kalender ?? null }, { art: "lead_felder", felder: { beratungAm: f.kalender ?? null } }] };
       }
       if (startsWith(e, E.abgesagt)) {
         const { d, aufgabe } = rueckrufAufgabe("📞 Beratung abgesagt – anrufen und neuen Termin legen", f, jetzt, 0);
         return { regel: "closing.abgesagt", beschreibung: "Abgesagt → Rückruf-Aufgabe, Sperre bis Termin", aktionen: [...(inZukunft(f.kalender, jetzt) ? [{ art: "lead_felder" as const, felder: { gesperrtBis: iso(d) } }] : []), aufgabe] };
       }
-      if (startsWith(e, E.nichtQualifiziert)) return nichtQualifiziert("closing.nicht_qualifiziert", f, jetzt, null);
+      if (startsWith(e, E.nichtQualifiziert)) return nichtQualifiziert("closing.nicht_qualifiziert", f, jetzt, f.verlustgrund ?? null);
+      if (startsWith(e, E.disqualifiziert)) return verloren("closing.disqualifiziert", f, jetzt, f.verlustgrund ?? null);
       return leer("closing.ohne_ergebnis");
     }
 
@@ -254,7 +254,12 @@ export function regeln(typ: ProtokollTyp, f: Felder, jetzt: Date = new Date(), b
       }
       if (startsWith(e, E.weiter)) {
         const { d, aufgabe } = rueckrufAufgabe("🔁 Follow-up", f, jetzt, 48);
-        return { regel: "followup.weiter", beschreibung: "Weiter Follow-up → Sperre bis Termin, Aufgabe", aktionen: [{ art: "lead_felder", felder: { gesperrtBis: iso(d) } }, aufgabe] };
+        const stufe: OppStatusKey | null = startsWith(f.art, "Closing") ? "closingFu" : startsWith(f.art, "Setting") ? "settingFu" : null;
+        return {
+          regel: "followup.weiter",
+          beschreibung: "Weiter Follow-up → Opp „Setting/Closing - Follow Up“ (je Art), Sperre bis Termin, Aufgabe",
+          aktionen: [...(stufe ? [{ art: "opp" as const, ziel: stufe, anlegen: true, abschlussDatum: iso(d) }] : []), { art: "lead_felder", felder: { gesperrtBis: iso(d) } }, aufgabe],
+        };
       }
       return leer("followup.ohne_ergebnis");
     }
@@ -272,31 +277,33 @@ export function angebotNachfassen(jetzt: Date = new Date()): RegelErgebnis {
 
 /** Alle Regel-IDs mit Beschreibung (für Einstellungen/README). */
 export const REGEL_IDS: Record<string, string> = {
-  "erstkontakt.erstgespraech_terminiert": "Erstkontakt: Erstgespräch terminiert",
-  "erstkontakt.rueckruf": "Erstkontakt: Rückruf vereinbart",
-  "erstkontakt.nicht_erreicht": "Erstkontakt: Nicht erreicht",
-  "erstkontakt.kein_interesse": "Erstkontakt: Kein Interesse",
-  "erstkontakt.nicht_qualifiziert": "Erstkontakt: Nicht qualifiziert",
-  "erstkontakt.bad_data": "Erstkontakt: Bad Data",
-  "erstgespraech.beratung_terminiert": "Erstgespräch: Beratung terminiert",
-  "erstgespraech.followup": "Erstgespräch: Follow-up",
-  "erstgespraech.nicht_qualifiziert": "Erstgespräch: Nicht qualifiziert",
-  "erstgespraech.no_show": "Erstgespräch: No-Show",
-  "erstgespraech.verschoben": "Erstgespräch: Verschoben",
-  "erstgespraech.abgesagt": "Erstgespräch: Abgesagt",
-  "closing.gewonnen": "Closing: Gewonnen",
-  "closing.angebot": "Closing: Angebot verschickt",
+  "erstkontakt.erstgespraech_terminiert": "Terminierung: Setting vereinbart",
+  "erstkontakt.rueckruf": "Terminierung: Rückruf vereinbart",
+  "erstkontakt.selbst_buchung": "Terminierung: Bucht sich selbst ein",
+  "erstkontakt.nicht_erreicht": "Terminierung: Niemand erreicht / Gatekeeper",
+  "erstkontakt.kein_interesse": "Terminierung: Kein Interesse (3M/6M)",
+  "erstkontakt.nicht_qualifiziert": "Terminierung: Unqualifiziert",
+  "erstkontakt.bad_data": "Terminierung: Bad Data",
+  "erstgespraech.beratung_terminiert": "Setting: Beratungsgespräch gelegt",
+  "erstgespraech.followup": "Setting: Follow-up / Rückruf",
+  "erstgespraech.nicht_qualifiziert": "Setting: Unqualifiziert",
+  "erstgespraech.disqualifiziert": "Setting: Disqualifiziert",
+  "erstgespraech.no_show": "Setting: No-Show",
+  "erstgespraech.verschoben": "Setting: Verschoben",
+  "erstgespraech.abgesagt": "Setting: Abgesagt",
+  "closing.gewonnen": "Closing: Abgeschlossen",
+  "closing.angebot": "Closing: Angebot versendet",
   "closing.angebot_nachfassen": "Closing: Angebot nachfassen (Aufgaben Tag 1/3/7)",
-  "closing.followup": "Closing: Follow-up",
-  "closing.cc2": "Closing: CC2 terminiert",
+  "closing.cc2": "Closing: CC2 vereinbart",
   "closing.verloren": "Closing: Verloren",
   "closing.no_show": "Closing: No-Show",
   "closing.verschoben": "Closing: Verschoben",
   "closing.abgesagt": "Closing: Abgesagt",
-  "closing.nicht_qualifiziert": "Closing: Nicht qualifiziert",
-  "followup.erstgespraech_terminiert": "Follow-up: Erstgespräch terminiert",
-  "followup.beratung_terminiert": "Follow-up: Beratung terminiert",
-  "followup.gewonnen": "Follow-up: Gewonnen",
+  "closing.nicht_qualifiziert": "Closing: Unqualifiziert",
+  "closing.disqualifiziert": "Closing: Disqualifiziert",
+  "followup.erstgespraech_terminiert": "Follow-up: Erstgespräch gelegt",
+  "followup.beratung_terminiert": "Follow-up: Beratungsgespräch gelegt",
+  "followup.gewonnen": "Follow-up: Abgeschlossen",
   "followup.weiter": "Follow-up: Weiter Follow-up",
   "followup.verloren": "Follow-up: Verloren",
   "followup.nicht_erreicht": "Follow-up: Nicht erreicht",

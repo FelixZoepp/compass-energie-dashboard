@@ -1,17 +1,19 @@
+import { VERLUSTGRUENDE } from "./protokolle";
 // Close-Struktur, die das Dashboard erwartet. Wird von scripts/close-setup.ts angelegt
 // und vom Sync über den Namen aufgelöst (IDs ändern sich je Org).
 
-export const PIPELINE_NAME = "Vertrieb TRIAS 360";
+export const PIPELINE_NAME = "Setting / Closing Pipeline";
 
 export const PIPELINE_STATUS: { label: string; type: "active" | "won" | "lost"; stage: string }[] = [
-  { label: "Setting", type: "active", stage: "setting" },
-  { label: "Closing terminiert", type: "active", stage: "closing_terminiert" },
-  { label: "Closing FU", type: "active", stage: "closing_fu" },
-  { label: "Angebot", type: "active", stage: "angebot" },
-  { label: "CC2", type: "active", stage: "cc2" },
-  { label: "Setting No-Show", type: "active", stage: "setting" },
-  { label: "Closing No-Show", type: "active", stage: "closing_terminiert" },
-  { label: "Gewonnen", type: "won", stage: "won" },
+  { label: "Setting - Terminiert", type: "active", stage: "setting" },
+  { label: "Setting - No Show", type: "active", stage: "setting" },
+  { label: "Setting - Follow Up", type: "active", stage: "setting" },
+  { label: "Closing - Terminiert", type: "active", stage: "closing_terminiert" },
+  { label: "Closing - No Show", type: "active", stage: "closing_terminiert" },
+  { label: "Closing - Follow Up", type: "active", stage: "closing_fu" },
+  { label: "Angebot verschickt", type: "active", stage: "angebot" },
+  { label: "CC2 - Terminiert", type: "active", stage: "cc2" },
+  { label: "Close", type: "won", stage: "won" },
   { label: "Verloren", type: "lost", stage: "lost" },
 ];
 
@@ -23,7 +25,8 @@ export interface FeldDef {
 }
 
 export const LEAD_FELDER = {
-  quelle: { name: "Quelle", type: "choices", choices: ["Meta", "LinkedIn", "Empfehlung", "Kaltakquise", "Organisch", "Sonstige"], description: "Woher kommt der Lead?" },
+  quelle: { name: "Leadquelle", type: "text", description: "Woher kommt der Lead? (Meta, LinkedIn, Empfehlung, Kaltakquise, Organisch …)" },
+  datumEintragung: { name: "Datum Eintragung", type: "datetime" },
   utmSource: { name: "utm_source", type: "text" },
   utmMedium: { name: "utm_medium", type: "text" },
   utmCampaign: { name: "utm_campaign", type: "text", description: "Meta-Kampagnen-ID ({{campaign.id}})" },
@@ -35,47 +38,59 @@ export const LEAD_FELDER = {
   kundentyp: { name: "Kundentyp", type: "choices", choices: ["B2B", "B2C"] },
   rolle: { name: "Rolle", type: "text", description: "z. B. Geschäftsführer, Vertriebsleiter" },
   teamgroesse: { name: "Teamgröße", type: "number", description: "Anzahl Vertriebler" },
-  setter: { name: "Setter", type: "user" },
-  closer: { name: "Closer", type: "user" },
+  opener: { name: "Setting Termin gelegt von: (Opener)", type: "user" },
+  terminGelegtVon: { name: "Termin gelegt von", type: "user" },
+  setter: { name: "Lead Qualifiziert durch Setter:", type: "user" },
+  closer: { name: "Closer für den Lead", type: "user" },
+  mitarbeiterzahl: { name: "Mitarbeiterzahl", type: "text" },
   gesperrtBis: { name: "Gesperrt bis", type: "datetime", description: "Bis dahin aus den Anruflisten (Smart Views) ausgeblendet – setzt die Protokoll-Automatik" },
-  erstgespraechAm: { name: "Erstgespräch am", type: "datetime", description: "Nächstes Erstgespräch (aus Protokoll/Calendly)" },
-  beratungAm: { name: "Beratung am", type: "datetime", description: "Nächstes Beratungsgespräch/CC2 (aus Protokoll/Calendly)" },
+  erstgespraechAm: { name: "Setting Termin (Direktbuchung)", type: "datetime", description: "Nächstes Setting/Erstgespräch (aus Protokoll/Calendly)" },
+  beratungAm: { name: "Closing Termin", type: "datetime", description: "Nächstes Beratungsgespräch/CC2 (aus Protokoll/Calendly)" },
+  ccTermin: { name: "CC Termin", type: "number" },
 } satisfies Record<string, FeldDef>;
 
-/** Lead-Status nach Zoepp-Muster. Die Close-Standardstatus bleiben unangetastet (nicht löschen). */
+/** Lead-Status wie in der Zoepp-Org (Close-Standardstatus gelöscht). Mehrere Schlüssel dürfen auf dasselbe Label zeigen. */
 export const LEAD_STATUS = {
-  neu: "Neu",
-  kontaktversuch: "Kontaktversuch",
-  egTerminiert: "Erstgespräch terminiert",
-  beratungTerminiert: "Beratung terminiert",
-  followup: "Follow-up",
-  angebot: "Angebot",
+  neu: "Leadpool",
+  kontaktversuch: "Leadpool",
+  followup: "Interessiert",
+  egTerminiert: "Setting",
+  beratungTerminiert: "Closing",
+  angebot: "Closing",
   kunde: "Kunde",
-  nichtQualifiziert: "Nicht qualifiziert",
-  verloren: "Verloren",
+  exKunde: "Ex-Kunde",
+  nichtQualifiziert: "Unqualifiziert",
+  verloren: "Disqualifiziert",
   badData: "Bad Data",
 } as const;
 export type LeadStatusKey = keyof typeof LEAD_STATUS;
 
 /** Opp-Status-Label der Pipeline je Ziel (für die Automatik). */
 export const OPP_STATUS = {
-  setting: "Setting",
-  closingTerminiert: "Closing terminiert",
-  closingFu: "Closing FU",
-  angebot: "Angebot",
-  cc2: "CC2",
-  settingNoShow: "Setting No-Show",
-  closingNoShow: "Closing No-Show",
-  gewonnen: "Gewonnen",
+  setting: "Setting - Terminiert",
+  settingNoShow: "Setting - No Show",
+  settingFu: "Setting - Follow Up",
+  closingTerminiert: "Closing - Terminiert",
+  closingNoShow: "Closing - No Show",
+  closingFu: "Closing - Follow Up",
+  angebot: "Angebot verschickt",
+  cc2: "CC2 - Terminiert",
+  gewonnen: "Close",
   verloren: "Verloren",
 } as const;
 export type OppStatusKey = keyof typeof OPP_STATUS;
+
+/** Kontaktfelder wie in der Zoepp-Org. */
+export const KONTAKT_FELDER = {
+  socials: { name: "Socials", type: "text" },
+  rolle: { name: "Contact Role", type: "choices", choices: ["Decision Maker", "Gatekeeper", "Point of Contact"] },
+} satisfies Record<string, FeldDef>;
 
 export const OPP_FELDER = {
   paket: { name: "Paket", type: "choices", choices: ["Einzelplatz", "Team", "Inhouse"] },
   plaetze: { name: "Plätze", type: "number" },
   zahlungsart: { name: "Zahlungsart", type: "choices", choices: ["Einmalzahlung", "Ratenzahlung 3x", "Ratenzahlung 6x", "Ratenzahlung 12x", "Finanzierung"] },
-  verlustgrund: { name: "Verlustgrund", type: "choices", choices: ["Preis", "Kein Bedarf", "Zeitpunkt", "Konkurrenz", "Nicht erreichbar", "Entscheider fehlt", "Sonstiges"] },
+  verlustgrund: { name: "Verlustgrund", type: "choices", choices: VERLUSTGRUENDE },
   listenpreis: { name: "Listenpreis", type: "number", description: "Für die Rabattquote" },
   cashCollected: { name: "Cash collected", type: "number", description: "Übergangslösung, bis ein Zahlungstool angebunden ist" },
   angebotAm: { name: "Angebot verschickt am", type: "date" },

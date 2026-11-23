@@ -41,16 +41,16 @@ async function main() {
     console.log(`  ${r.regel}: ${log.join(" · ")}`);
   };
   try {
-    await schritt("erstkontakt", { erreicht: "Nein / Mailbox", ergebnis: ERGEBNIS.erstkontakt.nichtErreicht });
-    await pruefe("Erstkontakt nicht erreicht", "Kontaktversuch", null);
-    await schritt("erstkontakt", { erreicht: "Ja", ergebnis: ERGEBNIS.erstkontakt.egTerminiert, kalender: morgen });
-    await pruefe("Erstgespräch terminiert", "Erstgespräch terminiert", "Setting");
-    await schritt("erstgespraech", { kundentyp: "B2B", teamgroesse: 6, ergebnis: ERGEBNIS.erstgespraech.beratungTerminiert, kalender: morgen, closer: user });
-    await pruefe("Beratung terminiert", "Beratung terminiert", "Closing terminiert");
+    await schritt("erstkontakt", { erreicht: "Niemand / Mailbox" });
+    await pruefe("Erstkontakt nicht erreicht", "Leadpool", null);
+    await schritt("erstkontakt", { erreicht: "Lead", ergebnis: ERGEBNIS.erstkontakt.egTerminiert, kalender: morgen });
+    await pruefe("Erstgespräch terminiert", "Setting", "Setting - Terminiert");
+    await schritt("erstgespraech", { teamgroesse: 6, ergebnis: ERGEBNIS.erstgespraech.beratungTerminiert, kalender: morgen, closer: user });
+    await pruefe("Beratung terminiert", "Closing", "Closing - Terminiert");
     await schritt("closing", { ergebnis: ERGEBNIS.closing.angebot, paket: "Team", plaetze: 5, preis: 9000 });
-    await pruefe("Angebot verschickt", "Angebot", "Angebot");
-    await schritt("followup", { art: "Angebot nachfassen", erreicht: "Ja", ergebnis: ERGEBNIS.followup.gewonnen });
-    await pruefe("Gewonnen", "Kunde", "Gewonnen");
+    await pruefe("Angebot verschickt", "Closing", "Angebot verschickt");
+    await schritt("followup", { art: "Closing-Follow-up", erreicht: "Ja", ergebnis: ERGEBNIS.followup.gewonnen });
+    await pruefe("Gewonnen", "Kunde", "Close");
     const anzahlFelder = PROTOKOLLE.reduce((s, p) => s + p.felder.length, 0);
     console.log(`Protokoll-Felder aufgelöst: ${ctx.feldKeyById.size}/${anzahlFelder}`);
   } finally {

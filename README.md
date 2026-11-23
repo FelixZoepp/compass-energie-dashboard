@@ -42,7 +42,7 @@ Der erste Nutzer, der sich anmeldet, wird automatisch Admin. Weitere Nutzer läd
 3. **Restliche Env in Vercel** (siehe [`.env.example`](.env.example)): `CLOSE_API_KEY`, `CRON_SECRET` (zufälliger String), `NEXT_PUBLIC_SITE_URL`, später `META_*`, `CLOSE_WEBHOOK_SECRET`. Lokal: `vercel env pull .env.local`.
 4. **Supabase Auth**: Authentication → URL Configuration: Site URL = Dashboard-Domain, Redirect URL `https://<domain>/auth/callback`.
 5. **Admin anlegen**: `npm run admin:anlegen -- felix@… "Felix Zoepp"`. Das Passwort wird einmal ausgegeben. Alternativ einfach als erster Nutzer anmelden.
-6. **Close-Struktur anlegen**: `npm run close:setup` zeigt im Trockenlauf, was fehlt. `npm run close:setup -- --anwenden` legt es an: Pipeline „Vertrieb TRIAS 360“ (Setting → Closing terminiert → Closing FU → Angebot → CC2 → Gewonnen/Verloren), Lead-Felder (Quelle, UTMs, fbclid/_fbc/_fbp, Kundentyp, Rolle, Teamgröße, Setter, Closer), Opp-Felder (Paket, Plätze, Zahlungsart, Verlustgrund, Listenpreis, Cash collected, Angebot verschickt am) und Meeting-Outcomes (Stattgefunden, No Show, Verschoben, Abgesagt).
+6. **Close-Struktur anlegen**: `npm run close:setup` zeigt im Trockenlauf, was fehlt. `npm run close:setup -- --anwenden` legt es an: Pipeline „Setting / Closing Pipeline“ (wie Zoepp), Lead-Status, Protokolle, Smart Views, Lead-Felder (Leadquelle, UTMs, fbclid/_fbc/_fbp, Kundentyp, Rolle, Teamgröße, Setter, Closer), Opp-Felder (Paket, Plätze, Zahlungsart, Verlustgrund, Listenpreis, Cash collected, Angebot verschickt am) und Meeting-Outcomes (Stattgefunden, No Show, Verschoben, Abgesagt).
 7. **Erst-Sync**: `npm run sync` (Close komplett + Meta 90 Tage) oder unter Einstellungen „Close komplett neu laden“.
 8. **Close-Webhook**: `npm run close:webhook -- https://<domain>/api/webhooks/close`. Das ausgegebene Secret als `CLOSE_WEBHOOK_SECRET` in Vercel eintragen (sensitive) und neu deployen.
 9. **Meta**: Im Business Manager einen System-User mit Zugriff auf das Werbekonto anlegen und einen Token ohne Ablauf mit `ads_read` erzeugen (für CAPI zusätzlich `ads_management`). Dann `META_ACCESS_TOKEN`, `META_AD_ACCOUNT_ID` (act_…), `META_PIXEL_ID` und `META_CAPI_TOKEN` setzen.
@@ -80,21 +80,21 @@ Es werden keine Nachrichten verschickt und keine Daten an Meta gesendet, bevor d
 
 ## Close-CRM
 
-Angelegt per `npm run close:setup -- --anwenden` (idempotent, Standard ist ein Trockenlauf, nichts wird gelöscht). Struktur nach Vorbild der Zoepp-Cloud, alle IDs werden über Namen aufgelöst.
+Angelegt per `npm run close:setup -- --anwenden` (idempotent, Standard ist ein Trockenlauf, nichts wird gelöscht). Struktur 1:1 wie in der Zoepp-Org (Stand 23.11.2026), alle IDs werden über Namen aufgelöst.
 
-**Pipeline „Vertrieb TRIAS 360“:** Setting → Setting No-Show → Closing terminiert → Closing No-Show → Closing FU → CC2 → Angebot → Gewonnen / Verloren
+**Pipeline „Setting / Closing Pipeline“:** Setting - Terminiert → Setting - No Show → Setting - Follow Up → Closing - Terminiert → Closing - No Show → Closing - Follow Up → Angebot verschickt → CC2 - Terminiert → Close (gewonnen) / Verloren
 
-**Lead-Status:** Neu, Kontaktversuch, Erstgespräch terminiert, Beratung terminiert, Follow-up, Angebot, Kunde, Nicht qualifiziert, Verloren, Bad Data (die Close-Standardstatus bleiben bestehen)
+**Lead-Status:** Leadpool, Interessiert, Setting, Closing, Kunde, Ex-Kunde, Unqualifiziert, Disqualifiziert, Bad Data (Close-Standardstatus und Standard-Pipeline „Sales“ gelöscht)
 
-**Lead-Felder für Abläufe:** `Gesperrt bis` (blendet Leads aus den Anruflisten aus), `Erstgespräch am`, `Beratung am`, `Setter`, `Closer`
+**Lead-Felder für Abläufe:** `Gesperrt bis` (blendet Leads aus den Anruflisten aus), `Setting Termin (Direktbuchung)`, `Closing Termin`, `Lead Qualifiziert durch Setter:`, `Closer für den Lead`, `Leadquelle`, `Datum Eintragung`, `Termin gelegt von`, `Setting Termin gelegt von: (Opener)`. Kontaktfelder: `Contact Role`, `Socials`.
 
 ### Gesprächsprotokolle (Custom Activities)
 | Protokoll | Wer | Ergebnisse |
 |---|---|---|
-| 1 - Erstkontakt (Terminierung) | Setter | Erstgespräch terminiert · Rückruf vereinbart · Nicht erreicht · Kein Interesse · Nicht qualifiziert · Bad Data |
-| 2 - Erstgespräch (Setting) | Setter | Beratung terminiert · Follow-up / Rückruf · Nicht qualifiziert · No-Show · Verschoben · Abgesagt (+ Qualifizierung GS 1–4, Closer, Notizen für den Closer) |
-| 3 - Beratungsgespräch (Closing) | Closer | Gewonnen · Angebot verschickt · Follow-up · CC2 terminiert · Verloren · No-Show · Verschoben · Abgesagt · Nicht qualifiziert (+ Paket, Plätze, Preis, Zahlungsart, Verlustgrund) |
-| 4 - Follow-up | beide | Erstgespräch terminiert · Beratung terminiert · Gewonnen · Weiter Follow-up · Verloren · Nicht erreicht |
+| 1 - Gesprächsprotokoll (Terminierung) | Setter | Wen erreicht? · Gatekeeper Ergebnis · Entscheider Ergebnis: Setting vereinbart am: · Rückruf vereinbart am: · Bucht sich selbst ein · Kein Interesse - 3M/6M · Unqualifiziert · Bad Data / Falsche Nummer |
+| 2 - Gesprächsprotokoll (Setting) | Setter | Beratungsgespräch gelegt · Follow-up / Rückruf · Unqualifiziert · Disqualifiziert · No-Show · Verschoben · Abgesagt (+ GS 1–5, Closer, Notizen für den Closer) |
+| 3 - Gesprächsprotokoll (Closing) | Closer | 1. Abgeschlossen · 2. Angebot versendet · 3. Unqualifiziert · 4. Disqualifiziert · 5. CC2 vereinbart am: · 6. No-Show · 7. Verschoben auf: · 8. Verloren · 9. Abgesagt (+ Closing-Fragen; zusätzlich Compass-Felder Paket, Plätze, Preis, Zahlungsart, Verlustgrund) |
+| 4 - Gesprächsprotokoll (Follow-Up) | beide | Erstgespräch gelegt · Beratungsgespräch gelegt · Abgeschlossen · Weiter Follow-up · Verloren · Nicht erreicht |
 
 ### Smart Views (Tabs)
 0.9 Offene Deals ohne Bewegung > 7 Tage · **1.0 Neue Inbound-Leads – sofort anrufen** · 1.1 Kontaktversuche offen · 1.2 Erstgespräche heute · 1.3 No-Show Erstgespräch zurückholen · 1.4 Setting-Follow-ups fällig · **2.0 Beratungen heute** · 2.1 Closing-Follow-ups fällig · 2.2 Offene Angebote > 3 Tage · 2.3 No-Show Beratung zurückholen · 2.4 CC2 · 3.0 Kunden · 3.1 Verloren – Reaktivierung fällig · 3.2 Nicht qualifiziert
@@ -106,25 +106,26 @@ Close-Webhook `activity.custom_activity` → `src/lib/close/regeln.ts` (reine Re
 
 | Protokoll → Ergebnis | Aktion in Close |
 |---|---|
-| Erstkontakt → Erstgespräch terminiert | Lead „Erstgespräch terminiert“, `Erstgespräch am`, Setter = Bearbeiter, Opp „Setting“ (anlegen), Sperre aufheben |
-| Erstkontakt → Rückruf vereinbart | Lead „Kontaktversuch“, gesperrt bis Rückruf, Rückruf-Aufgabe |
-| Erstkontakt → Nicht erreicht | Lead „Kontaktversuch“, 2 Std. gesperrt (bzw. bis Kalender) |
-| Erstkontakt → Kein Interesse | Opps verloren („Kein Bedarf“), Lead „Verloren“, 3 Monate gesperrt, Notiz |
-| … → Nicht qualifiziert | Lead „Nicht qualifiziert“, Opps verloren (Grund), 3 Monate gesperrt – mit Kalender: bis dahin + Rückruf-Aufgabe |
-| Erstkontakt → Bad Data / falsche Nummer | Lead „Bad Data“, Opps verloren |
-| Erstgespräch → Beratung terminiert | Lead „Beratung terminiert“, `Beratung am`, Closer/Setter, Kundentyp/Teamgröße/Rolle an den Lead, Opp „Closing terminiert“ |
-| Erstgespräch → Follow-up / Abgesagt | Lead „Follow-up“, Opp „Setting“, gesperrt bis Termin, Aufgabe |
-| Erstgespräch → No-Show | Opp „Setting No-Show“, Rückhol-Aufgabe |
-| Erstgespräch → Verschoben | neuer `Erstgespräch am`, Opp „Setting“ |
-| Closing → Gewonnen | Lead „Kunde“, Opp gewonnen mit Wert/Paket/Plätzen/Zahlungsart; ohne Wert Aufgabe „Auftragswert nachtragen“; offene Nachfass-Aufgaben erledigt |
-| Closing → Angebot verschickt | Lead „Angebot“, Opp „Angebot“ (Wert, Datum) + eigene Regel: Nachfass-Aufgaben Tag 1/3/7 |
-| Closing → Follow-up | Lead „Follow-up“, Opp „Closing FU“, gesperrt bis Termin, Aufgabe |
-| Closing → CC2 terminiert | Opp „CC2“, `Beratung am` = CC2-Termin |
-| Closing → No-Show | Opp „Closing No-Show“, Rückhol-Aufgabe |
-| Closing → Verschoben / Abgesagt | Opp „Closing terminiert“ + neuer Termin / Rückruf-Aufgabe |
-| … → Verloren | Opps verloren (Verlustgrund), Lead „Verloren“, gesperrt bis Kalender oder 3 Monate, Notiz → taucht danach in 3.1 Reaktivierung auf |
-| Follow-up → Erstgespräch / Beratung terminiert / Gewonnen | wie oben (Closer = „Gelegt auf“) |
-| Follow-up → Weiter Follow-up / Nicht erreicht | gesperrt bis Termin (bzw. 1 Tag), Aufgabe |
+| Terminierung → Setting vereinbart am: | Lead „Setting“, `Setting Termin`, Setter = „Gelegt auf:“/Bearbeiter, Opp „Setting - Terminiert“ (anlegen), Sperre aufheben |
+| Terminierung → Rückruf vereinbart am: (Entscheider oder Gatekeeper) | Lead „Interessiert“, gesperrt bis Rückruf, Rückruf-Aufgabe |
+| Terminierung → Bucht sich selbst ein | Lead „Interessiert“, 48 Std. gesperrt, Prüf-Aufgabe |
+| Terminierung → Niemand / Mailbox / Gatekeeper | bleibt „Leadpool“, 2 Std. gesperrt (bzw. bis Kalender) |
+| Terminierung → Kein Interesse - 3M / 6M | Opps verloren, Lead „Disqualifiziert“, 3 bzw. 6 Monate gesperrt, Notiz |
+| … → Unqualifiziert | Lead „Unqualifiziert“, Opps verloren (Grund), 3 Monate gesperrt – mit Kalender: bis dahin + Rückruf-Aufgabe |
+| Terminierung → Bad Data / Falsche Nummer | Lead „Bad Data“, Opps verloren |
+| Setting → Beratungsgespräch gelegt | Lead „Closing“, `Closing Termin`, Closer/Setter, Teamgröße an den Lead, Opp „Closing - Terminiert“ |
+| Setting → Follow-up / Rückruf / Abgesagt | Lead „Interessiert“, Opp „Setting - Follow Up“, gesperrt bis Termin, Aufgabe |
+| Setting → No-Show | Opp „Setting - No Show“, Rückhol-Aufgabe |
+| Setting → Verschoben | neuer `Setting Termin`, Opp „Setting - Terminiert“ |
+| Closing → 1. Abgeschlossen | Lead „Kunde“, Opp „Close“ mit Wert/Paket/Plätzen/Zahlungsart; ohne Wert Aufgabe „Auftragswert nachtragen“; offene Nachfass-Aufgaben erledigt |
+| Closing → 2. Angebot versendet | Lead „Closing“, Opp „Angebot verschickt“ (Wert, Datum) + eigene Regel: Nachfass-Aufgaben Tag 1/3/7 |
+| Closing → 5. CC2 vereinbart am: | Opp „CC2 - Terminiert“, `Closing Termin` = CC2-Termin |
+| Closing → 6. No-Show | Opp „Closing - No Show“, Rückhol-Aufgabe |
+| Closing → 7. Verschoben / 9. Abgesagt | Opp „Closing - Terminiert“ + neuer Termin / Rückruf-Aufgabe |
+| … → Verloren / Disqualifiziert | Opps verloren (Verlustgrund), Lead „Disqualifiziert“, gesperrt bis Kalender oder 3 Monate, Notiz → taucht danach in 3.1 Reaktivierung auf |
+| Follow-Up → Erstgespräch / Beratungsgespräch gelegt / Abgeschlossen | wie oben (Closer = „Gelegt auf“) |
+| Follow-Up → Weiter Follow-up | Opp „Setting - Follow Up“ bzw. „Closing - Follow Up“ (je nach Art), gesperrt bis Termin, Aufgabe |
+| Follow-Up → Nicht erreicht | 1 Tag (bzw. bis Kalender) gesperrt |
 
 **Einschalten:** Standard ist AUS. Dann wird nur protokolliert, was passieren würde (`automatik_log.trocken = true`). Einschalten über `settings.data.automatik`:
 ```json
@@ -132,7 +133,7 @@ Close-Webhook `activity.custom_activity` → `src/lib/close/regeln.ts` (reine Re
 ```
 Einzelne Regeln lassen sich mit `false` abschalten (IDs: `REGEL_IDS` in `src/lib/close/regeln.ts`). Voraussetzungen: Supabase-Migration `supabase/migrations/002_protokolle.sql` (steht auch am Ende von `schema.sql`) und der Close-Webhook inkl. `activity.custom_activity` (`npm run close:webhook -- https://<domain>/api/webhooks/close`).
 
-**Echttest:** `npm run close:probe -- --anwenden` spielt den Ablauf mit einem Test-Lead durch (Kontaktversuch → Erstgespräch → Beratung → Angebot → Gewonnen), prüft Lead-Status/Opp/Aufgaben und löscht den Test-Lead danach.
+**Echttest:** `npm run close:probe -- --anwenden` spielt den Ablauf mit einem Test-Lead durch (Leadpool → Setting → Closing → Angebot verschickt → Close), prüft Lead-Status/Opp/Aufgaben und löscht den Test-Lead danach.
 
 ## Entwicklung
 

@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation";
 export interface LogZeile { id: number; at: string; lead_id: string | null; regel: string; beschreibung: string | null; ok: boolean; trocken: boolean; fehler: string | null }
 
 const GRUPPEN = [
-  { id: "lead", label: "0 · Neuer Lead", text: "Neuer Lead in Close → Status „Neu“ + Aufgabe „sofort anrufen“ für den Setter" },
-  { id: "erstkontakt", label: "1 · Erstkontakt (Terminierung)", text: "Nicht erreicht → Sperre · Erstgespräch terminiert → Opp „Setting“ · Rückruf → Aufgabe" },
-  { id: "erstgespraech", label: "2 · Erstgespräch (Setting)", text: "Beratung terminiert → Opp „Closing terminiert“ · No-Show → Rückholaufgabe · Follow-up → Aufgabe" },
-  { id: "closing", label: "3 · Beratung (Closing)", text: "Angebot → Opp „Angebot“ + Nachfassen Tag 1/3/7 · Gewonnen → Kunde · Verloren → Verlustgrund, Sperre" },
-  { id: "followup", label: "4 · Follow-up", text: "Weiter Follow-up → Sperre + Aufgabe · Gewonnen/Verloren wie Closing" },
+  { id: "lead", label: "0 · Neuer Lead", text: "Neuer Lead in Close → Status „Leadpool“ + Aufgabe „sofort anrufen“ für den Setter" },
+  { id: "erstkontakt", label: "1 · Gesprächsprotokoll (Terminierung)", text: "Niemand erreicht → Sperre · Setting vereinbart → Lead „Setting“, Opp „Setting - Terminiert“ · Rückruf → „Interessiert“ + Aufgabe · Kein Interesse 3M/6M → Sperre" },
+  { id: "erstgespraech", label: "2 · Gesprächsprotokoll (Setting)", text: "Beratungsgespräch gelegt → Lead „Closing“, Opp „Closing - Terminiert“ · No-Show → „Setting - No Show“ + Rückholaufgabe · Follow-up → „Setting - Follow Up“" },
+  { id: "closing", label: "3 · Gesprächsprotokoll (Closing)", text: "Angebot versendet → Opp „Angebot verschickt“ + Nachfassen Tag 1/3/7 · Abgeschlossen → Kunde, Opp „Close“ · CC2 → „CC2 - Terminiert“ · Verloren/Disqualifiziert → Sperre" },
+  { id: "followup", label: "4 · Gesprächsprotokoll (Follow-Up)", text: "Weiter Follow-up → „Setting/Closing - Follow Up“ je Art + Aufgabe · Abgeschlossen/Verloren wie Closing" },
 ];
 
 function Schalter({ an, onChange, disabled, label }: { an: boolean; onChange: (v: boolean) => void; disabled?: boolean; label: string }) {

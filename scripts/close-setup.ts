@@ -4,7 +4,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { flag } from "./_env";
 import { CloseClient } from "../src/lib/close/client";
-import { LEAD_FELDER, LEAD_STATUS, MEETING_OUTCOMES, OPP_FELDER, OPP_STATUS, PIPELINE_NAME, PIPELINE_STATUS, type FeldDef, type LeadStatusKey, type OppStatusKey } from "../src/lib/close/felder";
+import { KONTAKT_FELDER, LEAD_FELDER, LEAD_STATUS, MEETING_OUTCOMES, OPP_FELDER, OPP_STATUS, PIPELINE_NAME, PIPELINE_STATUS, type FeldDef, type LeadStatusKey, type OppStatusKey } from "../src/lib/close/felder";
 import { PROTOKOLLE } from "../src/lib/close/protokolle";
 import { smartViews } from "../src/lib/close/smartviews";
 
@@ -40,7 +40,7 @@ async function main() {
 
   // Reihenfolge der Stufen: No-Show direkt hinter der jeweiligen Terminstufe, Gewonnen/Verloren am Ende
   if (anwenden && pipe) {
-    const ORDNUNG = ["Setting", "Setting No-Show", "Closing terminiert", "Closing No-Show", "Closing FU", "CC2", "Angebot", "Gewonnen", "Verloren"];
+    const ORDNUNG = PIPELINE_STATUS.map((s) => s.label);
     const aktuell = (await cl.get(`pipeline/${pipe.id}/`)).statuses ?? [];
     const sortiert = [...aktuell].sort((a: any, b: any) => (ORDNUNG.indexOf(a.label) + 99) % 99 - (ORDNUNG.indexOf(b.label) + 99) % 99);
     if (sortiert.map((x: any) => x.id).join() !== aktuell.map((x: any) => x.id).join()) {
@@ -50,7 +50,7 @@ async function main() {
   }
 
   // Felder
-  const felder = async (objekt: "lead" | "opportunity", defs: Record<string, FeldDef>) => {
+  const felder = async (objekt: "lead" | "opportunity" | "contact", defs: Record<string, FeldDef>) => {
     const vorhanden = await cl.alle(`custom_field/${objekt}/`);
     for (const d of Object.values(defs)) {
       const f = vorhanden.find((x: any) => x.name.toLowerCase() === d.name.toLowerCase());
@@ -69,6 +69,7 @@ async function main() {
   };
   await felder("lead", LEAD_FELDER);
   await felder("opportunity", OPP_FELDER);
+  await felder("contact", KONTAKT_FELDER);
 
   // Meeting-Ergebnisse
   const outcomes = await cl.alle("outcome/");
@@ -80,7 +81,7 @@ async function main() {
 
   // Lead-Status (Standardstatus von Close bleiben unangetastet)
   const leadStatus = await cl.alle("status/lead/");
-  for (const label of Object.values(LEAD_STATUS)) {
+  for (const label of [...new Set(Object.values(LEAD_STATUS))]) {
     if (leadStatus.some((x: any) => x.label.toLowerCase() === label.toLowerCase())) { console.log(`✓ Lead-Status ${label}`); continue; }
     todo.push(`Lead-Status „${label}“`);
     if (anwenden) await cl.post("status/lead/", { label });

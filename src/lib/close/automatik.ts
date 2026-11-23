@@ -245,12 +245,12 @@ export async function verarbeiteProtokoll(activityId: string, jetzt: Date = new 
 }
 
 // ---------------------------------------------------------------------------
-// Neuer Lead (Close-Webhook lead.created): Status „Neu“ + Aufgabe „sofort anrufen“ für den Setter.
+// Neuer Lead (Close-Webhook lead.created): Status „Leadpool“ + Aufgabe „sofort anrufen“ für den Setter.
 
 export function regelNeuerLead(jetzt: Date = new Date()): RegelErgebnis {
   return {
     regel: "lead.neu",
-    beschreibung: "Neuer Lead → Status „Neu“, Aufgabe „sofort anrufen“ (Speed-to-Lead < 5 Min.)",
+    beschreibung: "Neuer Lead → Status „Leadpool“, Aufgabe „sofort anrufen“ (Speed-to-Lead < 5 Min.)",
     aktionen: [
       { art: "lead_status", status: "neu" },
       { art: "aufgabe", text: "🔥 Neuer Inbound-Lead – sofort anrufen (Ziel: unter 5 Minuten)", datum: jetzt.toISOString(), an: "bearbeiter" },

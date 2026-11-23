@@ -58,13 +58,13 @@ export function smartViews(ids: SmartViewIds): SmartViewDef[] {
   });
   const f = (key: keyof SmartViewIds["feld"]) => ids.feld[key] ?? (fehlt.push(`Lead-Feld ${key}`), "");
   const nichtGesperrt = () => or(cf(f("gesperrtBis"), bisJetzt), cf(f("gesperrtBis"), { type: "exists" }, true));
-  const abgeschlossen = (): LeadStatusKey[] => ["kunde", "verloren", "nichtQualifiziert", "badData"];
+  const abgeschlossen = (): LeadStatusKey[] => ["kunde", "exKunde", "verloren", "nichtQualifiziert", "badData"];
   const hatTelefon = feld("lead", "num_phone_numbers", zahl({ gt: 0 }));
 
   const views: Array<{ name: string; s_query: Q }> = [
     {
       name: "💤 0.9 Offene Deals ohne Bewegung > 7 Tage",
-      s_query: sQuery(deal(["setting", "closingTerminiert", "closingFu", "angebot", "cc2", "settingNoShow", "closingNoShow"], feld("opportunity", "date_updated", aelterAlsTage(7))), [sortierung("date_updated", "asc")]),
+      s_query: sQuery(deal(["setting", "settingFu", "closingTerminiert", "closingFu", "angebot", "cc2", "settingNoShow", "closingNoShow"], feld("opportunity", "date_updated", aelterAlsTage(7))), [sortierung("date_updated", "asc")]),
     },
     {
       name: "🔥 1.0 Neue Inbound-Leads – sofort anrufen",
@@ -76,7 +76,7 @@ export function smartViews(ids: SmartViewIds): SmartViewDef[] {
     },
     { name: "📅 1.2 Erstgespräche heute", s_query: sQuery(cf(f("erstgespraechAm"), heute), [sortierung("date_updated", "asc")]) },
     { name: "❌ 1.3 No-Show Erstgespräch zurückholen", s_query: sQuery(and(deal(["settingNoShow"]), nichtGesperrt()), [sortierung("date_updated", "asc")]) },
-    { name: "🔁 1.4 Setting-Follow-ups fällig", s_query: sQuery(and(ls("followup"), deal(["setting"]), nichtGesperrt()), [sortierung("date_updated", "asc")]) },
+    { name: "🔁 1.4 Setting-Follow-ups fällig", s_query: sQuery(and(deal(["settingFu"]), nichtGesperrt()), [sortierung("date_updated", "asc")]) },
     { name: "📅 2.0 Beratungen heute", s_query: sQuery(cf(f("beratungAm"), heute), [sortierung("date_updated", "asc")]) },
     { name: "🔁 2.1 Closing-Follow-ups fällig", s_query: sQuery(and(deal(["closingFu"]), nichtGesperrt()), [sortierung("date_updated", "asc")]) },
     { name: "💶 2.2 Offene Angebote > 3 Tage", s_query: sQuery(deal(["angebot"], feld("opportunity", "date_updated", aelterAlsTage(3))), [sortierung("date_updated", "asc")]) },
